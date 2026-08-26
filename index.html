@@ -247,73 +247,165 @@
 
 <script>
 // ==========================================
-// 1. DATA SCHEMA & CONFIGURATION
+// 1. UPDATED DATA SCHEMA & CONFIGURATION
 // ==========================================
 const workflowData = [
   {
-    id: "t1", name: "Tier 1: Hydrodynamic forcing", colorVar: "var(--tier-1-color)", disabled: false,
+    id: "s1", name: "1. Structure Selection", colorVar: "var(--tier-1-color)",
     subs: [
-      { id: "1.1", name: "1.1 CHS" },
-      { id: "1.2", name: "1.2 Wave data", subs: [{ id: "1.2.1", name: "1.2.1 MOPS" }, { id: "1.2.2", name: "1.2.2 CDIP" }] },
-      { id: "1.3", name: "1.3 Water level data", subs: [{ id: "1.3.1a", name: "1.3.1 NOAA" }, { id: "1.3.1b", name: "1.3.1 Local" }] }
+      { id: "1.1", name: "Levee" },
+      { id: "1.2", name: "Floodwall" },
+      { id: "1.3", name: "Rubble Mound" },
+      { id: "1.4", name: "NNBF" },
+      { id: "1.5", name: "Hydrodynamic-Hazards Only" }
     ]
   },
   {
-    id: "t2", name: "Tier 2: Probabilistic sampling", colorVar: "var(--tier-2-color)", disabled: false,
+    id: "s2", name: "2. Hydrodynamic Forcing", colorVar: "var(--tier-1-color)",
     subs: [
-      { id: "2.1", name: "2.1 PROS", subs: [{ id: "2.1.1", name: "2.1.1 Response-based" }, { id: "2.1.2", name: "2.1.2 Frequency-based" }] },
-      { id: "2.2", name: "2.2 LCS" },
-      { id: "2.3", name: "2.3 Water level adjustments" }
+      { id: "2.1", name: "2.1 CHS Data" },
+      { 
+        id: "2.2", name: "2.2 Other Wave Data", 
+        subs: [
+          { id: "2.2.1", name: "CDIP" },
+          { id: "2.2.2", name: "WIS" },
+          { id: "2.2.3", name: "MOPS" },
+          { id: "2.2.4", name: "Locally Generated Wave" }
+        ]
+      },
+      { 
+        id: "2.3", name: "2.3 Other Water Level Data", 
+        subs: [
+          { id: "2.3.1", name: "NOAA" },
+          { id: "2.3.2", name: "Locally Generated WL" }
+        ]
+      },
+      {
+        id: "2.4", name: "2.4 Pre-Processing",
+        subs: [
+          { id: "2.4.1", name: "Univariate: POT" },
+          { id: "2.4.2", name: "Univariate: MLM Fit" },
+          { id: "2.4.3", name: "Univariate: QQ Optimization" },
+          { id: "2.4.4", name: "Univariate: Bootstrap" },
+          { id: "2.4.5", name: "Univariate: PST" },
+          { id: "2.4.6", name: "Multivariate: Correlation" },
+          { id: "2.4.7", name: "Multivariate: Copula" },
+          { id: "2.4.8", name: "Manual Deterministic Entry" }
+        ]
+      }
     ]
   },
   {
-    id: "t3", name: "Tier 3: Hydraulic response", colorVar: "var(--tier-3-color)", disabled: false,
+    id: "s3", name: "3. Probabilistic Sampling", colorVar: "var(--tier-2-color)",
     subs: [
-      { id: "3.1", name: "3.1 Levee", subs: [{ id: "3.1.1", name: "3.1.1 Overtopping" }, { id: "3.1.2", name: "3.1.2 Runup" }] },
-      { id: "3.2", name: "3.2 Rubble mound", subs: [{ id: "3.2.1", name: "3.2.1 Overtopping" }, { id: "3.2.2", name: "3.2.2 Stability" }] }
+      { id: "3.1", name: "Deterministic" },
+      { id: "3.2", name: "PROS - Frequency Based" },
+      { id: "3.3", name: "PROS - Response Based" },
+      { id: "3.4", name: "LCS" },
+      { id: "3.5", name: "Random Tide Sampling (Nearby Gage)" },
+      { id: "3.6", name: "Include RSLC" }
     ]
   },
   {
-    id: "t4", name: "Tier 4: Hazards and uncertainty", colorVar: "var(--tier-4-color)", disabled: false,
+    id: "s4", name: "4. Hydraulic Responses", colorVar: "var(--tier-3-color)",
     subs: [
-      { id: "4.1", name: "4.1 JPM" },
-      { id: "4.2", name: "4.2 EVA" }
+      { id: "4.1", name: "Levee: Overtopping Rate" },
+      { id: "4.2", name: "Levee: Overtopping Volume" },
+      { id: "4.3", name: "Levee: Runup" },
+      { id: "4.4", name: "Levee: Cumulative Excess Vol" },
+      { id: "4.5", name: "Levee: Cumulative Excess Work" },
+      { id: "4.6", name: "Rubble Mound: Seaside Stability" },
+      { id: "4.7", name: "Rubble Mound: Leeside Stability" },
+      { id: "4.8", name: "Rubble Mound: Wave Transmission" },
+      { id: "4.9", name: "Rubble Mound: Runup" },
+      { id: "4.10", name: "Rubble Mound: Overtopping Rate" },
+      { id: "4.11", name: "Rubble Mound: Overtopping Vol" },
+      { id: "4.12", name: "Floodwall: Overtopping Rate" },
+      { id: "4.13", name: "Floodwall: Overtopping Vol" },
+      { id: "4.14", name: "Floodwall: Nappe Geometry" },
+      { id: "4.15", name: "Floodwall: Pressures & Forces" },
+      { id: "4.16", name: "NNBF: TBD" },
+      { id: "4.17", name: "Waves: Wind-Generated" },
+      { id: "4.18", name: "Waves: Wave Transformation" },
+      { id: "4.19", name: "Waves: Setup" }
     ]
   },
   {
-    id: "t5", name: "Tier 5: Outputs", colorVar: "var(--tier-5-color)", disabled: false,
+    id: "s5", name: "5. Hazards & Uncertainty", colorVar: "var(--tier-4-color)",
     subs: [
-      { id: "5.1", name: "5.1 Figures" },
-      { id: "5.2", name: "5.2 Tables" }
+      { id: "5.1", name: "JPM Analysis" },
+      { id: "5.2", name: "EVA Analysis" }
+    ]
+  },
+  {
+    id: "s6", name: "6. Outputs", colorVar: "var(--tier-5-color)",
+    subs: [
+      { id: "6.1", name: "Figures" },
+      { id: "6.2", name: "Tables" }
     ]
   }
 ];
 
-let dragPayload = null;
-let violatingItemIds = new Set();
+// Standalone Non-Workflow Options
+const standaloneTools = [
+  { id: "nw1", name: "Storm Sampling Tool", colorVar: "#7f8c8d" },
+  { id: "nw2", name: "CIRP Integration", colorVar: "#7f8c8d" }
+];
 
+// Updated validation rules for Deterministic / Non-CHS conditions
 const validationRules = [
   {
-    id: "freq_prereq",
-    targetId: "2.1.2",
-    message: "Frequency-based sampling (2.1.2) requires JPM (4.1) or EVA (4.2) to be added earlier in the workflow!",
+    id: "det_freq_prereq",
+    message: "PROS-Frequency or Deterministic sampling requires prior JPM (for CHS data) or EVA (for non-CHS data)!",
     validate: (sequence) => {
       const flatList = sequence.flatMap(step => step.parallelItems);
       const violatingIds = [];
 
-      for (let i = 0; i < flatList.length; i++) {
-        if (flatList[i].id === "2.1.2") {
-          const priorItems = flatList.slice(0, i);
-          const hasJpmOrEva = priorItems.some(item => item.id === "4.1" || item.id === "4.2");
-          if (!hasJpmOrEva) {
-            violatingIds.push("2.1.2");
+      const hasChs = flatList.some(item => item.id === "2.1");
+      const hasNonChs = flatList.some(item => item.id.startsWith("2.2") || item.id.startsWith("2.3"));
+      const hasJpm = flatList.some(item => item.id === "5.1");
+      const hasEva = flatList.some(item => item.id === "5.2");
+
+      flatList.forEach((item, index) => {
+        if (item.id === "3.1" || item.id === "3.2") { // Deterministic or PROS-Frequency
+          const priorItems = flatList.slice(0, index);
+          const priorJpm = priorItems.some(i => i.id === "5.1");
+          const priorEva = priorItems.some(i => i.id === "5.2");
+
+          if (hasChs && !priorJpm) {
+            violatingIds.push(item.id);
+          } else if (hasNonChs && !priorEva) {
+            violatingIds.push(item.id);
           }
         }
-      }
+      });
       return violatingIds;
     }
   }
 ];
+
+// Dynamic Gating Logic for Non-CHS Data
+function applyNonChsGating() {
+  const flatList = canvasSequence.flatMap(step => step.parallelItems);
+  const hasNonChs = flatList.some(item => item.id.startsWith("2.2") || item.id.startsWith("2.3"));
+  
+  canvasSequence.forEach((colGroup, colIdx) => {
+    colGroup.parallelItems.forEach((item, itemIdx) => {
+      if ((item.id === "3.3" || item.id === "3.4") && hasNonChs) {
+        // Automatically inject grayed out scheme box if missing
+        const hasGate = colGroup.parallelItems.some(i => i.id === "gate_scheme");
+        if (!hasGate) {
+          colGroup.parallelItems.unshift({
+            id: "gate_scheme",
+            name: "Sampling Scheme / Probabilities",
+            disabled: true,
+            colorVar: "var(--grayed-out)"
+          });
+        }
+      }
+    });
+  });
+}
 
 let canvasSequence = [];
 const collapsedPaletteTiers = new Set();

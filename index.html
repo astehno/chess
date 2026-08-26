@@ -315,7 +315,6 @@ const validationRules = [
   }
 ];
 
-// Canvas sequence contains columns. Each column can hold an array of distinct parallel items.
 let canvasSequence = [];
 const collapsedPaletteTiers = new Set();
 
@@ -378,7 +377,6 @@ function createPaletteNode(item, colorVar) {
       item: JSON.parse(JSON.stringify(item))
     };
     e.dataTransfer.setData("text/plain", item.id);
-    e.dataTransfer.effectAllowed = "copy";
   });
 
   wrapper.appendChild(box);
@@ -428,7 +426,6 @@ function createDropZone(index) {
   zone.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    e.dataTransfer.dropEffect = "move";
     zone.classList.add('drag-over');
   });
 
@@ -446,11 +443,9 @@ function createDropZone(index) {
     if (!dragPayload) return;
 
     if (!dragPayload.isNew) {
-      // Remove item from existing location before moving
       removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
     }
 
-    // Insert as a new column step
     const newColumn = {
       parallelItems: [dragPayload.item]
     };
@@ -477,7 +472,6 @@ function createCanvasColumn(colGroup, colIndex) {
   const subContainer = document.createElement('div');
   subContainer.className = 'sub-tier-container';
 
-  // Allow dropping directly onto column box to stack in parallel
   columnBox.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -501,7 +495,6 @@ function createCanvasColumn(colGroup, colIndex) {
       removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
     }
 
-    // Stack the dragged item into this exact column
     colGroup.parallelItems.push(dragPayload.item);
     dragPayload = null;
 
@@ -509,7 +502,6 @@ function createCanvasColumn(colGroup, colIndex) {
     validateRules();
   });
 
-  // Render each stacked parallel item in this column
   colGroup.parallelItems.forEach((item, itemIndex) => {
     const box = document.createElement('div');
     box.className = `box ${item.disabled ? 'grayed' : ''} ${violatingItemIds.has(item.id) ? 'violating' : ''}`;
@@ -525,16 +517,7 @@ function createCanvasColumn(colGroup, colIndex) {
         fromItem: itemIndex,
         item: item
       };
-    });
-
-    box.addEventListener('dragend', (e) => {
-      // Remove item if dropped outside canvas
-      if (e.dataTransfer.dropEffect === "none" && dragPayload && !dragPayload.isNew) {
-        removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
-        dragPayload = null;
-        renderCanvas();
-        validateRules();
-      }
+      e.dataTransfer.setData("text/plain", item.id);
     });
 
     subContainer.appendChild(box);
@@ -580,7 +563,6 @@ function showWarning(message) {
 
 function closeModal() {
   document.getElementById('warningModal').style.display = 'none';
-  // Re-render canvas to display red warning highlight outlines around violating cells
   renderCanvas();
 }
 

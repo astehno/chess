@@ -443,7 +443,9 @@ function updateDynamicGatingAndCollapse() {
     selectedStructs.forEach(structId => {
       const responses = hydraulicResponsesByStructure[structId] || [];
       responses.forEach(resp => {
-        if (!tier4.subs.some(r => r.id === resp.id)) {
+      if (!tier4.subs.some(r => r.id === resp.id)) {
+          // Explicitly assign Tier 4 color
+          resp.colorVar = "var(--tier-4-color)";
           tier4.subs.push(resp);
         }
       });
@@ -557,8 +559,8 @@ function createPaletteNode(item, colorVar) {
     }
 
     item.subs.forEach(sub => {
-      sub.colorVar = colorVar;
-      subContainer.appendChild(createPaletteNode(sub, colorVar));
+      sub.colorVar = sub.colorVar || colorVar;
+      subContainer.appendChild(createPaletteNode(sub, sub.colorVar));
     });
     wrapper.appendChild(subContainer);
   }

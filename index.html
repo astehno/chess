@@ -55,7 +55,7 @@
       flex-direction: row;
       flex-wrap: wrap; /* Allows steps to wrap cleanly to new lines */
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       min-height: 350px;
       padding: 20px;
       border: 2px dashed #ccc;
@@ -63,26 +63,32 @@
       flex-grow: 1;
     }
 
-    /* Top Tier / Parallel Column Container Box */
-    .tier-box {
+    /* Parallel Column Container Box */
+    .column-box {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
-      padding: 14px;
+      gap: 8px;
+      padding: 12px;
       border-radius: 12px;
-      color: white;
-      min-width: 180px;
+      background: #2c3e50;
+      min-width: 200px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.15);
       position: relative;
+      transition: background-color 0.2s, border 0.2s;
     }
 
-    .tier-title {
-      font-weight: bold;
-      font-size: 1.1em;
-      text-align: center;
-      margin-bottom: 5px;
-      width: 100%;
+    .column-box.drag-over-stack {
+      background: #34495e;
+      outline: 2px dashed #3498db;
+    }
+
+    .column-title {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #bdc3c7;
+      margin-bottom: 2px;
       pointer-events: none;
     }
 
@@ -104,32 +110,26 @@
       user-select: none;
       text-align: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      transition: transform 0.2s, opacity 0.2s;
+      transition: transform 0.2s, opacity 0.2s, border 0.2s;
       width: 100%;
       box-sizing: border-box;
       position: relative;
     }
 
-    .box.grayed, .tier-box.grayed {
-      background-color: var(--grayed-out) !important;
+    /* Violation Highlighting */
+    .box.violating {
+      border: 3px solid #ff3838 !important;
+      animation: pulse-border 1.2s infinite;
     }
 
-    /* Stack Control Button (Add Parallel Element) */
-    .stack-add-btn {
-      background: rgba(255, 255, 255, 0.3);
-      border: 1px dashed white;
-      color: white;
-      font-weight: bold;
-      padding: 4px 8px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8em;
-      width: 100%;
-      margin-top: 5px;
-      transition: background 0.2s;
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 0 0 rgba(255, 56, 56, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 56, 56, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 56, 56, 0); }
     }
-    .stack-add-btn:hover {
-      background: rgba(255, 255, 255, 0.5);
+
+    .box.grayed, .column-box.grayed {
+      background-color: var(--grayed-out) !important;
     }
 
     /* Palette Collapsible Styling */
@@ -168,26 +168,27 @@
 
     /* Streamlined Drop Zones between workflow items */
     .drop-zone {
-      width: 24px;
-      height: 60px;
+      width: 45px;
+      height: 90px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2px dashed #b0b0b0;
-      border-radius: 6px;
+      border: 2px dashed #a0aec0;
+      background-color: #edf2f7;
+      border-radius: 8px;
       transition: all 0.2s;
       flex-shrink: 0;
-      color: #777;
+      color: #4a5568;
       font-weight: bold;
-      font-size: 16px;
+      font-size: 22px;
       cursor: pointer;
     }
 
     .drop-zone.drag-over {
       border-color: #3498db;
-      background: rgba(52, 152, 219, 0.2);
-      color: #3498db;
-      transform: scale(1.15);
+      background: rgba(52, 152, 219, 0.25);
+      color: #2980b9;
+      transform: scale(1.1);
     }
 
     /* Modal Warning Styling */
@@ -230,7 +231,7 @@
   <!-- WORKFLOW CANVAS -->
   <div class="canvas-container">
     <h3>Your Workflow</h3>
-    <p><small>Drag items to (+) drop zones. Stack cells vertically to run them simultaneously. Workflows wrap automatically when long.</small></p>
+    <p><small>Drag items to <b>→</b> drop zones to add or move steps. Drop items directly onto existing dark column boxes to run different steps simultaneously in parallel.</small></p>
     <div class="workflow-canvas" id="canvas"></div>
   </div>
 </div>
@@ -273,7 +274,7 @@ const workflowData = [
     ]
   },
   {
-    id: "t4", name: "Tier 4: Hazards and uncertainty", colorVar: "var(--tier-4-color)", disabled: true,
+    id: "t4", name: "Tier 4: Hazards and uncertainty", colorVar: "var(--tier-4-color)", disabled: false,
     subs: [
       { id: "4.1", name: "4.1 JPM" },
       { id: "4.2", name: "4.2 EVA" }
@@ -288,29 +289,33 @@ const workflowData = [
   }
 ];
 
-let currentDraggedItem = null;
+let dragPayload = null;
+let violatingItemIds = new Set();
 
 const validationRules = [
   {
     id: "freq_prereq",
     targetId: "2.1.2",
-    message: "Frequency-based sampling requires JPM (4.1) or EVA (4.2) to be added to the workflow first!",
+    message: "Frequency-based sampling (2.1.2) requires JPM (4.1) or EVA (4.2) to be added earlier in the workflow!",
     validate: (sequence) => {
-      // Flatten sequence to check sequential step prerequisites
-      const flatList = sequence.flatMap(step => step.parallelItems || [step]);
+      const flatList = sequence.flatMap(step => step.parallelItems);
+      const violatingIds = [];
+
       for (let i = 0; i < flatList.length; i++) {
         if (flatList[i].id === "2.1.2") {
           const priorItems = flatList.slice(0, i);
           const hasJpmOrEva = priorItems.some(item => item.id === "4.1" || item.id === "4.2");
-          if (!hasJpmOrEva) return false;
+          if (!hasJpmOrEva) {
+            violatingIds.push("2.1.2");
+          }
         }
       }
-      return true;
+      return violatingIds;
     }
   }
 ];
 
-// Sequence stores columns. Each column can hold an array of parallel items.
+// Canvas sequence contains columns. Each column can hold an array of distinct parallel items.
 let canvasSequence = [];
 const collapsedPaletteTiers = new Set();
 
@@ -368,7 +373,10 @@ function createPaletteNode(item, colorVar) {
   box.draggable = true;
   box.addEventListener('dragstart', (e) => {
     e.stopPropagation();
-    currentDraggedItem = JSON.parse(JSON.stringify(item));
+    dragPayload = {
+      isNew: true,
+      item: JSON.parse(JSON.stringify(item))
+    };
     e.dataTransfer.setData("text/plain", item.id);
     e.dataTransfer.effectAllowed = "copy";
   });
@@ -414,12 +422,13 @@ function renderCanvas() {
 function createDropZone(index) {
   const zone = document.createElement('div');
   zone.className = 'drop-zone';
-  zone.innerText = '+';
+  zone.innerText = '→';
+  zone.title = "Drop here to insert or move step";
 
   zone.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    e.dataTransfer.dropEffect = "copy";
+    e.dataTransfer.dropEffect = "move";
     zone.classList.add('drag-over');
   });
 
@@ -434,16 +443,20 @@ function createDropZone(index) {
     e.stopPropagation();
     zone.classList.remove('drag-over');
     
-    if (!currentDraggedItem) return;
+    if (!dragPayload) return;
 
-    // Wrap item inside a column container for parallel stacking support
+    if (!dragPayload.isNew) {
+      // Remove item from existing location before moving
+      removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
+    }
+
+    // Insert as a new column step
     const newColumn = {
-      isStack: true,
-      parallelItems: [currentDraggedItem]
+      parallelItems: [dragPayload.item]
     };
 
     canvasSequence.splice(index, 0, newColumn);
-    currentDraggedItem = null;
+    dragPayload = null;
 
     renderCanvas();
     validateRules();
@@ -453,72 +466,110 @@ function createDropZone(index) {
 }
 
 function createCanvasColumn(colGroup, colIndex) {
-  const tierBox = document.createElement('div');
-  const baseColor = colGroup.parallelItems[0]?.colorVar || 'var(--tier-1-color)';
-  
-  tierBox.className = 'tier-box';
-  tierBox.style.backgroundColor = baseColor;
+  const columnBox = document.createElement('div');
+  columnBox.className = 'column-box';
+
+  const title = document.createElement('div');
+  title.className = 'column-title';
+  title.innerText = colGroup.parallelItems.length > 1 ? "Parallel Execution" : "Workflow Step";
+  columnBox.appendChild(title);
 
   const subContainer = document.createElement('div');
   subContainer.className = 'sub-tier-container';
 
+  // Allow dropping directly onto column box to stack in parallel
+  columnBox.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    columnBox.classList.add('drag-over-stack');
+  });
+
+  columnBox.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    columnBox.classList.remove('drag-over-stack');
+  });
+
+  columnBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    columnBox.classList.remove('drag-over-stack');
+
+    if (!dragPayload) return;
+
+    if (!dragPayload.isNew) {
+      removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
+    }
+
+    // Stack the dragged item into this exact column
+    colGroup.parallelItems.push(dragPayload.item);
+    dragPayload = null;
+
+    renderCanvas();
+    validateRules();
+  });
+
   // Render each stacked parallel item in this column
   colGroup.parallelItems.forEach((item, itemIndex) => {
     const box = document.createElement('div');
-    box.className = `box ${item.disabled ? 'grayed' : ''}`;
-    box.style.backgroundColor = 'rgba(0, 0, 0, 0.25)';
+    box.className = `box ${item.disabled ? 'grayed' : ''} ${violatingItemIds.has(item.id) ? 'violating' : ''}`;
+    box.style.backgroundColor = item.colorVar || 'var(--tier-1-color)';
     box.innerText = item.name;
 
     box.draggable = true;
     box.addEventListener('dragstart', (e) => {
       e.stopPropagation();
-      currentDraggedItem = item;
+      dragPayload = {
+        isNew: false,
+        fromCol: colIndex,
+        fromItem: itemIndex,
+        item: item
+      };
     });
-    box.addEventListener('dragend', (e) => handleRemoveItem(e, colIndex, itemIndex));
+
+    box.addEventListener('dragend', (e) => {
+      // Remove item if dropped outside canvas
+      if (e.dataTransfer.dropEffect === "none" && dragPayload && !dragPayload.isNew) {
+        removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
+        dragPayload = null;
+        renderCanvas();
+        validateRules();
+      }
+    });
 
     subContainer.appendChild(box);
   });
 
-  tierBox.appendChild(subContainer);
-
-  // Stack Action: Add parallel item button
-  const addParallelBtn = document.createElement('button');
-  addParallelBtn.className = 'stack-add-btn';
-  addParallelBtn.innerText = '+ Run Parallel';
-  addParallelBtn.title = 'Add another action to run simultaneously at this step';
-  addParallelBtn.onclick = () => {
-    const dup = JSON.parse(JSON.stringify(colGroup.parallelItems[0]));
-    colGroup.parallelItems.push(dup);
-    renderCanvas();
-  };
-  tierBox.appendChild(addParallelBtn);
-
-  return tierBox;
+  columnBox.appendChild(subContainer);
+  return columnBox;
 }
 
-function handleRemoveItem(e, colIndex, itemIndex) {
-  if (e.dataTransfer.dropEffect === "none") {
+function removeExistingItem(colIndex, itemIndex) {
+  if (canvasSequence[colIndex]) {
     canvasSequence[colIndex].parallelItems.splice(itemIndex, 1);
-    // If column has no items left, remove column entirely
     if (canvasSequence[colIndex].parallelItems.length === 0) {
       canvasSequence.splice(colIndex, 1);
     }
-    renderCanvas();
-    validateRules();
   }
-  currentDraggedItem = null;
 }
 
 // ==========================================
-// 4. RULE ENGINE
+// 4. RULE ENGINE & VISUAL WARNING HIGHLIGHTS
 // ==========================================
 function validateRules() {
+  violatingItemIds.clear();
+  let warningMessage = null;
+
   for (const rule of validationRules) {
-    const isValid = rule.validate(canvasSequence);
-    if (!isValid) {
-      showWarning(rule.message);
-      break;
+    const violations = rule.validate(canvasSequence);
+    if (violations.length > 0) {
+      violations.forEach(id => violatingItemIds.add(id));
+      warningMessage = rule.message;
     }
+  }
+
+  if (violatingItemIds.size > 0) {
+    showWarning(warningMessage);
   }
 }
 
@@ -529,6 +580,8 @@ function showWarning(message) {
 
 function closeModal() {
   document.getElementById('warningModal').style.display = 'none';
+  // Re-render canvas to display red warning highlight outlines around violating cells
+  renderCanvas();
 }
 
 // Initialize on load

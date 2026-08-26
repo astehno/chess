@@ -5,23 +5,55 @@
   <title>Modular Coastal Workflow Builder</title>
   <style>
     :root {
-      --tier-1-color: #3498db;
-      --tier-2-color: #2ecc71;
-      --tier-3-color: #e67e22;
-      --tier-4-color: #9b59b6;
-      --tier-5-color: #e74c3c;
+      --tier-1-color: #1b365d; /* Deep Navy (Updated to avoid matching Tier 2) */
+      --tier-2-color: #3498db; /* Coastal Blue */
+      --tier-3-color: #e67e22; /* Sampling Orange */
+      --tier-4-color: #9b59b6; /* Hydraulic Purple */
+      --tier-5-color: #e74c3c; /* Hazard Red */
+      --tier-6-color: #2c3e50; /* Output Dark Slate */
       --grayed-out: #7f8c8d;
     }
 
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 15px;
       background-color: #f4f6f9;
     }
 
+    .top-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      margin-bottom: 15px;
+    }
+
+    .top-controls label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #3498db;
+      color: white;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #2980b9; }
+    .btn-danger { background: #e74c3c; }
+    .btn-danger:hover { background: #c0392b; }
+
     .container {
       display: flex;
-      gap: 20px;
+      gap: 15px;
     }
 
     .sidebar {
@@ -38,7 +70,7 @@
     .canvas-container {
       flex-grow: 1;
       background: #ffffff;
-      padding: 20px;
+      padding: 15px;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       min-height: 80vh;
@@ -46,17 +78,29 @@
       flex-direction: column;
     }
 
+    .inline-warning {
+      display: none;
+      background-color: #fde8e8;
+      border: 1px solid #e74c3c;
+      color: #c0392b;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
     .workflow-canvas {
       display: flex;
       flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-      min-height: 300px;
-      padding: 20px;
+      align-items: flex-start;
+      gap: 8px;
+      min-height: 350px;
+      padding: 15px;
       border: 2px dashed #ccc;
       border-radius: 8px;
       flex-grow: 1;
+      overflow-x: auto;
     }
 
     .column-box {
@@ -64,18 +108,12 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      padding: 12px;
-      border-radius: 12px;
+      padding: 10px;
+      border-radius: 8px;
       background: #2c3e50;
-      min-width: 200px;
+      min-width: 190px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.15);
       position: relative;
-      transition: background-color 0.2s, outline 0.2s;
-    }
-
-    .column-box.drag-over-stack {
-      background: #34495e;
-      outline: 2px dashed #3498db;
     }
 
     .column-title {
@@ -87,17 +125,34 @@
       pointer-events: none;
     }
 
-    .sub-tier-container {
+    .stack-section {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       width: 100%;
     }
 
+    .stack-divider {
+      width: 100%;
+      height: 1px;
+      background: #4a6572;
+      margin: 4px 0;
+    }
+
+    .section-label {
+      font-size: 0.65em;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 100%;
+      text-align: left;
+    }
+
     .box {
-      border-radius: 8px;
-      padding: 10px 14px;
+      border-radius: 6px;
+      padding: 8px 10px;
       color: white;
+      font-size: 0.85em;
       font-weight: bold;
       cursor: grab;
       user-select: none;
@@ -107,6 +162,10 @@
       width: 100%;
       box-sizing: border-box;
       position: relative;
+    }
+
+    .box.dashed-border {
+      border: 2px dashed #ffffff !important;
     }
 
     .box.violating {
@@ -123,10 +182,22 @@
     .box.grayed {
       background-color: var(--grayed-out) !important;
       cursor: not-allowed;
+      opacity: 0.6;
     }
 
+    .delete-btn {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .delete-btn:hover { color: #fff; }
+
     .palette-item-wrapper {
-      margin: 8px 0;
+      margin: 6px 0;
     }
 
     .palette-header {
@@ -142,7 +213,7 @@
       color: white;
       font-weight: bold;
       border-radius: 4px;
-      padding: 2px 6px;
+      padding: 1px 5px;
       margin-left: 5px;
       cursor: pointer;
       pointer-events: auto;
@@ -150,8 +221,8 @@
 
     .sub-tree {
       display: none;
-      padding-left: 15px;
-      margin-top: 5px;
+      padding-left: 12px;
+      margin-top: 4px;
     }
 
     .sub-tree.expanded {
@@ -159,19 +230,19 @@
     }
 
     .drop-zone {
-      width: 45px;
-      height: 90px;
+      width: 35px;
+      min-height: 100px;
       display: flex;
       align-items: center;
       justify-content: center;
       border: 2px dashed #a0aec0;
       background-color: #edf2f7;
-      border-radius: 8px;
+      border-radius: 6px;
       transition: all 0.2s;
       flex-shrink: 0;
       color: #4a5568;
       font-weight: bold;
-      font-size: 22px;
+      font-size: 18px;
       cursor: pointer;
     }
 
@@ -179,43 +250,23 @@
       border-color: #3498db;
       background: rgba(52, 152, 219, 0.25);
       color: #2980b9;
-      transform: scale(1.1);
-    }
-
-    .standalone-container {
-      margin-top: 20px;
-      padding: 15px;
-      background: #e2e8f0;
-      border-radius: 8px;
-    }
-
-    .standalone-grid {
-      display: flex;
-      gap: 10px;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-      max-width: 400px;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
 
-<h2>Modular Coastal Workflow Builder</h2>
+<div class="top-controls">
+  <label for="presetSelect">Demonstration Preset:</label>
+  <select id="presetSelect" onchange="loadPreset()">
+    <option value="">-- Select Workflow Preset --</option>
+    <option value="chs_levee">CHS Levee Analysis</option>
+    <option value="non_chs_rubble">Non-CHS Rubble Mound with Pre-Processing</option>
+    <option value="lcs_hazard">LCS Hydro-Hazard Workflow</option>
+  </select>
+  <button class="btn" onclick="loadPreset()">Load Preset</button>
+  <button class="btn btn-danger" onclick="resetCanvas()">Reset Canvas</button>
+</div>
 
 <div class="container">
   <div class="sidebar" id="palette">
@@ -224,26 +275,14 @@
   </div>
 
   <div class="canvas-container">
-    <h3>Your Workflow Canvas</h3>
-    <p><small>Drag items to the <b>→</b> drop zones to insert or reorder steps. Drop items onto existing dark column boxes to run them in parallel.</small></p>
+    <h3>Workflow Canvas</h3>
+    <div class="inline-warning" id="inlineWarning"></div>
     <div class="workflow-canvas" id="canvas"></div>
-
-    <div class="standalone-container">
-      <h4>Standalone Tools (Non-Workflow)</h4>
-      <div class="standalone-grid" id="standalone-items"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="warningModal" onclick="closeModal()">
-  <div class="modal-content">
-    <h3 id="modalTitle">Constraint Violation Warning</h3>
-    <p id="modalMsg">Click anywhere to dismiss and adjust your workflow sequence.</p>
   </div>
 </div>
 
 <script>
-// Master Data Definition
+// Dashboard & Schema Definition
 const workflowData = [
   {
     id: "s1", name: "1. Structure Selection", colorVar: "var(--tier-1-color)",
@@ -256,42 +295,30 @@ const workflowData = [
     ]
   },
   {
-    id: "s2", name: "2. Hydrodynamic Forcing", colorVar: "var(--tier-1-color)",
+    id: "s2", name: "2. Hydrodynamic Forcing", colorVar: "var(--tier-2-color)",
     subs: [
       { id: "2.1", name: "2.1 CHS Data" },
       { 
-        id: "2.2", name: "2.2 Wave Data", 
+        id: "2.2", name: "2.2 Wave Data", dashed: true,
         subs: [
-          { id: "2.2.1", name: "CDIP" },
-          { id: "2.2.2", name: "WIS" },
-          { id: "2.2.3", name: "MOPS" },
-          { id: "2.2.4", name: "Locally Generated Wave" }
+          { id: "2.2.1", name: "CDIP", dashed: true },
+          { id: "2.2.2", name: "WIS", dashed: true },
+          { id: "2.2.3", name: "MOPS", dashed: true },
+          { id: "2.2.4", name: "Locally Generated Wave", dashed: true }
         ]
       },
       { 
-        id: "2.3", name: "2.3 Water Level Data", 
+        id: "2.3", name: "2.3 Water Level Data", dashed: true,
         subs: [
-          { id: "2.3.1", name: "NOAA" },
-          { id: "2.3.2", name: "Locally Generated WL" }
+          { id: "2.3.1", name: "NOAA", dashed: true },
+          { id: "2.3.2", name: "Locally Generated WL", dashed: true }
         ]
       },
-      {
-        id: "2.4", name: "2.4 Pre-Processing",
-        subs: [
-          { id: "2.4.1", name: "Univariate: POT" },
-          { id: "2.4.2", name: "Univariate: MLM Fit" },
-          { id: "2.4.3", name: "Univariate: QQ Optimization" },
-          { id: "2.4.4", name: "Univariate: Bootstrap" },
-          { id: "2.4.5", name: "Univariate: PST" },
-          { id: "2.4.6", name: "Multivariate: Correlation" },
-          { id: "2.4.7", name: "Multivariate: Copula" },
-          { id: "2.4.8", name: "Manual Deterministic Entry" }
-        ]
-      }
+      { id: "2.4", name: "Manual Deterministic Entry" }
     ]
   },
   {
-    id: "s3", name: "3. Probabilistic Sampling", colorVar: "var(--tier-2-color)",
+    id: "s3", name: "3. Probabilistic Sampling", colorVar: "var(--tier-3-color)",
     subs: [
       { id: "3.1", name: "Deterministic" },
       { id: "3.2", name: "PROS - Frequency Based" },
@@ -302,18 +329,32 @@ const workflowData = [
     ]
   },
   {
-    id: "s4", name: "4. Hydraulic Responses", colorVar: "var(--tier-3-color)",
-    subs: [] // Dynamically generated based on selected structures in Stage 1
+    id: "s4", name: "4. Hydraulic Responses", colorVar: "var(--tier-4-color)",
+    subs: [] // Dynamically generated based on Stage 1 structure selections
   },
   {
-    id: "s5", name: "5. Hazards & Uncertainty", colorVar: "var(--tier-4-color)",
+    id: "s5", name: "5. Hazards & Uncertainty", colorVar: "var(--tier-5-color)",
     subs: [
       { id: "5.1", name: "JPM Analysis" },
-      { id: "5.2", name: "EVA Analysis" }
+      { id: "5.2", name: "LCS Statistical Analysis" },
+      {
+        id: "5.3", name: "Pre-Processing",
+        subs: [
+          { id: "5.3.1", name: "Univariate: POT", dashed: true },
+          { id: "5.3.2", name: "Univariate: MLM Fit", dashed: true },
+          { id: "5.3.3", name: "Univariate: QQ Optimization", dashed: true },
+          { id: "5.3.4", name: "Univariate: Bootstrap", dashed: true },
+          { id: "5.3.5", name: "Univariate: PST", dashed: true },
+          { id: "5.3.6", name: "Multivariate: Correlation", dashed: true },
+          { id: "5.3.7", name: "Multivariate: Copula", dashed: true }
+        ]
+      },
+      { id: "5.4", name: "Storm Sampling Tool" },
+      { id: "5.5", name: "CIRP Integration" }
     ]
   },
   {
-    id: "s6", name: "6. Outputs", colorVar: "var(--tier-5-color)",
+    id: "s6", name: "6. Outputs", colorVar: "var(--tier-6-color)",
     subs: [
       { id: "6.1", name: "Figures" },
       { id: "6.2", name: "Tables" }
@@ -324,10 +365,10 @@ const workflowData = [
 const hydraulicResponsesByStructure = {
   "1.1": [ // Levee
     { id: "4.1.1", name: "Levee: Overtopping Rate" },
-    { id: "4.1.2", name: "Levee: Overtopping Volume" },
+    { id: "4.1.2", name: "Levee: Overtopping Volume", dashed: true },
     { id: "4.1.3", name: "Levee: Runup" },
-    { id: "4.1.4", name: "Levee: Cumulative Excess Vol" },
-    { id: "4.1.5", name: "Levee: Cumulative Excess Work" }
+    { id: "4.1.4", name: "Levee: Cumulative Excess Vol", dashed: true },
+    { id: "4.1.5", name: "Levee: Cumulative Excess Work", dashed: true }
   ],
   "1.2": [ // Floodwall
     { id: "4.2.1", name: "Floodwall: Overtopping Rate" },
@@ -344,72 +385,51 @@ const hydraulicResponsesByStructure = {
     { id: "4.3.6", name: "Rubble Mound: Overtopping Vol" }
   ],
   "1.4": [ // NNBF
-    { id: "4.4.1", name: "NNBF: Wave Attenuation / TBD" }
+    { id: "4.4.1", name: "NNBF: Wave Attenuation", dashed: true }
   ],
   "1.5": [ // Hydrodynamic-Hazards Only
-    { id: "4.5.1", name: "Waves: Wind-Generated" },
-    { id: "4.5.2", name: "Waves: Wave Transformation" },
-    { id: "4.5.3", name: "Waves: Setup" }
+    { id: "4.5.1", name: "Waves: Wind-Generated", dashed: true },
+    { id: "4.5.2", name: "Waves: Wave Transformation", dashed: true },
+    { id: "4.5.3", name: "Waves: Setup", dashed: true }
   ]
 };
-
-const standaloneTools = [
-  { id: "nw1", name: "Storm Sampling Tool", colorVar: "#7f8c8d" },
-  { id: "nw2", name: "CIRP Integration", colorVar: "#7f8c8d" }
-];
 
 let dragPayload = null;
 let canvasSequence = [];
 let violatingItemIds = new Set();
 const collapsedPaletteTiers = new Set();
 
-const validationRules = [
-  {
-    id: "det_freq_prereq",
-    message: "PROS-Frequency or Deterministic sampling requires prior JPM (for CHS data) or EVA (for non-CHS data)!",
-    validate: (sequence) => {
-      const flatList = sequence.flatMap(step => step.parallelItems);
-      const violatingIds = [];
-
-      const hasChs = flatList.some(item => item.id === "2.1");
-      const hasNonChs = flatList.some(item => item.id.startsWith("2.2") || item.id.startsWith("2.3"));
-
-      flatList.forEach((item, index) => {
-        if (item.id === "3.1" || item.id === "3.2") {
-          const priorItems = flatList.slice(0, index);
-          const priorJpm = priorItems.some(i => i.id === "5.1");
-          const priorEva = priorItems.some(i => i.id === "5.2");
-
-          if (hasChs && !priorJpm) {
-            violatingIds.push(item.id);
-          } else if (hasNonChs && !priorEva) {
-            violatingIds.push(item.id);
-          }
-        }
-      });
-      return violatingIds;
-    }
-  }
-];
-
-// Dynamic Hydraulic Options Update based on Stage 1 Selections
-function getSelectedStructureIds() {
-  const flatCanvas = canvasSequence.flatMap(col => col.parallelItems);
-  return flatCanvas.filter(item => item.id.startsWith("1.")).map(item => item.id);
+// Utility Functions
+function getFlatCanvasItems() {
+  return canvasSequence.flatMap(col => [...col.stochasticItems, ...col.hydraulicItems]);
 }
 
-function updateHydraulicResponsesInSchema() {
+function getSelectedStructureIds() {
+  return getFlatCanvasItems().filter(item => item.id.startsWith("1.")).map(item => item.id);
+}
+
+function hasNonChsSelection() {
+  return getFlatCanvasItems().some(item => item.id.startsWith("2.2") || item.id.startsWith("2.3"));
+}
+
+function hasLcsSelection() {
+  return getFlatCanvasItems().some(item => item.id === "3.4");
+}
+
+function updateDynamicGatingAndCollapse() {
+  // Collapse Tiers 3 & 4 if Non-CHS selected
+  if (hasNonChsSelection()) {
+    collapsedPaletteTiers.add("s3");
+    collapsedPaletteTiers.add("s4");
+  }
+
+  // Handle Dynamic Hydraulic Options (Tier 4)
   const selectedStructs = getSelectedStructureIds();
   const tier4 = workflowData.find(tier => tier.id === "s4");
-  
   tier4.subs = [];
   
   if (selectedStructs.length === 0) {
-    tier4.subs.push({
-      id: "no_struct_notice",
-      name: "Select Structure(s) in Stage 1 First",
-      disabled: true
-    });
+    tier4.subs.push({ id: "no_struct_notice", name: "Select Structure(s) in Stage 1 First", disabled: true });
   } else {
     selectedStructs.forEach(structId => {
       const responses = hydraulicResponsesByStructure[structId] || [];
@@ -420,19 +440,23 @@ function updateHydraulicResponsesInSchema() {
       });
     });
   }
+
+  // Handle LCS Statistical Analysis Gating
+  const lcsStatNode = workflowData.find(t => t.id === "s5").subs.find(sub => sub.id === "5.2");
+  if (lcsStatNode) {
+    lcsStatNode.disabled = !hasLcsSelection();
+  }
 }
 
-// Render Palette Sidebar
+// Render Sidebar Palette
 function renderPalette() {
-  updateHydraulicResponsesInSchema();
+  updateDynamicGatingAndCollapse();
   const container = document.getElementById('palette-items');
   container.innerHTML = '';
   
   workflowData.forEach(tier => {
     container.appendChild(createPaletteNode(tier, tier.colorVar));
   });
-
-  renderStandaloneTools();
 }
 
 function createPaletteNode(item, colorVar) {
@@ -440,7 +464,7 @@ function createPaletteNode(item, colorVar) {
   wrapper.className = 'palette-item-wrapper';
 
   const box = document.createElement('div');
-  box.className = `box ${item.disabled ? 'grayed' : ''}`;
+  box.className = `box ${item.disabled ? 'grayed' : ''} ${item.dashed ? 'dashed-border' : ''}`;
   box.style.backgroundColor = item.disabled ? 'var(--grayed-out)' : colorVar;
   
   const header = document.createElement('div');
@@ -478,11 +502,14 @@ function createPaletteNode(item, colorVar) {
     box.draggable = true;
     box.addEventListener('dragstart', (e) => {
       e.stopPropagation();
-      dragPayload = {
-        isNew: true,
-        item: JSON.parse(JSON.stringify(item))
-      };
+      dragPayload = { isNew: true, item: JSON.parse(JSON.stringify(item)) };
       e.dataTransfer.setData("text/plain", item.id);
+    });
+    
+    // Quick-add to canvas on double click
+    box.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      addItemToCanvas(JSON.parse(JSON.stringify(item)), canvasSequence.length);
     });
   }
 
@@ -491,9 +518,7 @@ function createPaletteNode(item, colorVar) {
   if (hasSubs) {
     const subContainer = document.createElement('div');
     subContainer.className = 'sub-tree';
-    const isCollapsed = collapsedPaletteTiers.has(item.id);
-
-    if (!isCollapsed) {
+    if (!collapsedPaletteTiers.has(item.id)) {
       subContainer.classList.add('expanded');
     }
 
@@ -507,18 +532,6 @@ function createPaletteNode(item, colorVar) {
   return wrapper;
 }
 
-function renderStandaloneTools() {
-  const container = document.getElementById('standalone-items');
-  container.innerHTML = '';
-  standaloneTools.forEach(tool => {
-    const box = document.createElement('div');
-    box.className = 'box';
-    box.style.backgroundColor = tool.colorVar;
-    box.innerText = tool.name;
-    container.appendChild(box);
-  });
-}
-
 // Render Canvas
 function renderCanvas() {
   const canvas = document.getElementById('canvas');
@@ -527,17 +540,19 @@ function renderCanvas() {
   canvas.appendChild(createDropZone(0));
 
   canvasSequence.forEach((colGroup, colIndex) => {
-    const nodeEl = createCanvasColumn(colGroup, colIndex);
-    canvas.appendChild(nodeEl);
+    const columnEl = createCanvasColumn(colGroup, colIndex);
+    canvas.appendChild(columnEl);
     canvas.appendChild(createDropZone(colIndex + 1));
   });
+
+  validateRules();
 }
 
 function createDropZone(index) {
   const zone = document.createElement('div');
   zone.className = 'drop-zone';
   zone.innerText = '→';
-  zone.title = "Drop here to insert step";
+  zone.title = "Drop to insert step here";
 
   zone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -555,26 +570,40 @@ function createDropZone(index) {
     e.preventDefault();
     e.stopPropagation();
     zone.classList.remove('drag-over');
-    
     if (!dragPayload) return;
 
     if (!dragPayload.isNew) {
-      removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
+      removeCanvasItem(dragPayload.fromCol, dragPayload.section, dragPayload.fromIndex);
     }
 
-    const newColumn = {
-      parallelItems: [dragPayload.item]
-    };
-
-    canvasSequence.splice(index, 0, newColumn);
+    addItemToCanvas(dragPayload.item, index);
     dragPayload = null;
-
-    renderPalette();
-    renderCanvas();
-    validateRules();
   });
 
   return zone;
+}
+
+function addItemToCanvas(item, targetColIndex) {
+  const isTier4 = item.id.startsWith("4.");
+
+  if (targetColIndex >= canvasSequence.length) {
+    const newCol = { stochasticItems: [], hydraulicItems: [] };
+    if (isTier4) {
+      newCol.hydraulicItems.push(item);
+    } else {
+      newCol.stochasticItems.push(item);
+    }
+    canvasSequence.push(newCol);
+  } else {
+    if (isTier4) {
+      canvasSequence[targetColIndex].hydraulicItems.push(item);
+    } else {
+      canvasSequence[targetColIndex].stochasticItems.push(item);
+    }
+  }
+
+  renderPalette();
+  renderCanvas();
 }
 
 function createCanvasColumn(colGroup, colIndex) {
@@ -583,111 +612,173 @@ function createCanvasColumn(colGroup, colIndex) {
 
   const title = document.createElement('div');
   title.className = 'column-title';
-  title.innerText = colGroup.parallelItems.length > 1 ? "Parallel Execution" : "Step " + (colIndex + 1);
+  title.innerText = "Step " + (colIndex + 1);
   columnBox.appendChild(title);
 
-  const subContainer = document.createElement('div');
-  subContainer.className = 'sub-tier-container';
-
-  columnBox.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    columnBox.classList.add('drag-over-stack');
+  // Top Section: Stochastic Options / General Steps
+  const stochasticSection = document.createElement('div');
+  stochasticSection.className = 'stack-section';
+  colGroup.stochasticItems.forEach((item, idx) => {
+    stochasticSection.appendChild(createCanvasBox(item, colIndex, 'stochasticItems', idx));
   });
+  columnBox.appendChild(stochasticSection);
 
-  columnBox.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    columnBox.classList.remove('drag-over-stack');
-  });
+  // Bottom Section: Hydraulic Responses (Always forced directly underneath Tier 3)
+  if (colGroup.hydraulicItems.length > 0) {
+    const divider = document.createElement('div');
+    divider.className = 'stack-divider';
+    columnBox.appendChild(divider);
 
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.innerText = 'Hydraulic Calculations';
+    columnBox.appendChild(label);
+
+    const hydraulicSection = document.createElement('div');
+    hydraulicSection.className = 'stack-section';
+    colGroup.hydraulicItems.forEach((item, idx) => {
+      hydraulicSection.appendChild(createCanvasBox(item, colIndex, 'hydraulicItems', idx));
+    });
+    columnBox.appendChild(hydraulicSection);
+  }
+
+  // Column Drop Handling
+  columnBox.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
   columnBox.addEventListener('drop', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    columnBox.classList.remove('drag-over-stack');
-
     if (!dragPayload) return;
 
     if (!dragPayload.isNew) {
-      removeExistingItem(dragPayload.fromCol, dragPayload.fromItem);
+      removeCanvasItem(dragPayload.fromCol, dragPayload.section, dragPayload.fromIndex);
     }
 
-    colGroup.parallelItems.push(dragPayload.item);
-    dragPayload = null;
+    if (dragPayload.item.id.startsWith("4.")) {
+      colGroup.hydraulicItems.push(dragPayload.item);
+    } else {
+      colGroup.stochasticItems.push(dragPayload.item);
+    }
 
+    dragPayload = null;
     renderPalette();
     renderCanvas();
-    validateRules();
   });
 
-  colGroup.parallelItems.forEach((item, itemIndex) => {
-    const box = document.createElement('div');
-    box.className = `box ${item.disabled ? 'grayed' : ''} ${violatingItemIds.has(item.id) ? 'violating' : ''}`;
-    box.style.backgroundColor = item.colorVar || 'var(--tier-1-color)';
-    box.innerText = item.name;
-
-    box.draggable = true;
-    box.addEventListener('dragstart', (e) => {
-      e.stopPropagation();
-      dragPayload = {
-        isNew: false,
-        fromCol: colIndex,
-        fromItem: itemIndex,
-        item: item
-      };
-      e.dataTransfer.setData("text/plain", item.id);
-    });
-
-    subContainer.appendChild(box);
-  });
-
-  columnBox.appendChild(subContainer);
   return columnBox;
 }
 
-function removeExistingItem(colIndex, itemIndex) {
+function createCanvasBox(item, colIndex, section, index) {
+  const box = document.createElement('div');
+  box.className = `box ${item.dashed ? 'dashed-border' : ''} ${violatingItemIds.has(item.id) ? 'violating' : ''}`;
+  box.style.backgroundColor = item.colorVar || 'var(--tier-1-color)';
+  box.innerText = item.name;
+
+  const deleteBtn = document.createElement('span');
+  deleteBtn.className = 'delete-btn';
+  deleteBtn.innerText = '✕';
+  deleteBtn.onclick = (e) => {
+    e.stopPropagation();
+    removeCanvasItem(colIndex, section, index);
+    renderPalette();
+    renderCanvas();
+  };
+  box.appendChild(deleteBtn);
+
+  box.draggable = true;
+  box.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    dragPayload = { isNew: false, fromCol: colIndex, section: section, fromIndex: index, item: item };
+    e.dataTransfer.setData("text/plain", item.id);
+  });
+
+  return box;
+}
+
+function removeCanvasItem(colIndex, section, index) {
   if (canvasSequence[colIndex]) {
-    canvasSequence[colIndex].parallelItems.splice(itemIndex, 1);
-    if (canvasSequence[colIndex].parallelItems.length === 0) {
+    canvasSequence[colIndex][section].splice(index, 1);
+    if (canvasSequence[colIndex].stochasticItems.length === 0 && canvasSequence[colIndex].hydraulicItems.length === 0) {
       canvasSequence.splice(colIndex, 1);
     }
   }
 }
 
-// Rule Validation Logic
+// Validation & Preset Management
 function validateRules() {
   violatingItemIds.clear();
-  let warningMessage = null;
+  const warningEl = document.getElementById('inlineWarning');
+  const flatItems = getFlatCanvasItems();
 
-  for (const rule of validationRules) {
-    const violations = rule.validate(canvasSequence);
-    if (violations.length > 0) {
-      violations.forEach(id => violatingItemIds.add(id));
-      warningMessage = rule.message;
+  const hasChs = flatItems.some(i => i.id === "2.1");
+  const hasJpm = flatItems.some(i => i.id === "5.1");
+  const hasLcs = flatItems.some(i => i.id === "3.4");
+  const hasLcsStat = flatItems.some(i => i.id === "5.2");
+
+  let warnings = [];
+
+  flatItems.forEach(item => {
+    if ((item.id === "3.1" || item.id === "3.2") && hasChs && !hasJpm) {
+      violatingItemIds.add(item.id);
+      warnings.push("CHS Deterministic/PROS-Frequency requires prior JPM Analysis.");
     }
-  }
+    if (item.id === "5.2" && !hasLcs) {
+      violatingItemIds.add(item.id);
+      warnings.push("LCS Statistical Analysis requires LCS sampling in Tier 3.");
+    }
+  });
 
-  if (violatingItemIds.size > 0) {
-    showWarning(warningMessage);
+  if (warnings.length > 0) {
+    warningEl.innerText = "⚠ Warning: " + warnings.join(" ");
+    warningEl.style.display = 'block';
+  } else {
+    warningEl.style.display = 'none';
   }
 }
 
-function showWarning(message) {
-  document.getElementById('modalMsg').innerText = message || "Order constraint violated.";
-  document.getElementById('warningModal').style.display = 'flex';
-}
-
-function closeModal() {
-  document.getElementById('warningModal').style.display = 'none';
+function resetCanvas() {
+  canvasSequence = [];
+  collapsedPaletteTiers.clear();
+  renderPalette();
   renderCanvas();
 }
 
-// Global drag cleanup
-window.addEventListener('dragend', () => {
-  dragPayload = null;
-});
+function loadPreset() {
+  const val = document.getElementById('presetSelect').value;
+  resetCanvas();
+  if (!val) return;
 
-// Initialize on load
+  if (val === 'chs_levee') {
+    canvasSequence = [
+      { stochasticItems: [{ id: "1.1", name: "Levee", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "2.1", name: "2.1 CHS Data", colorVar: "var(--tier-2-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "5.1", name: "JPM Analysis", colorVar: "var(--tier-5-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "3.2", name: "PROS - Frequency Based", colorVar: "var(--tier-3-color)" }], 
+        hydraulicItems: [{ id: "4.1.1", name: "Levee: Overtopping Rate", colorVar: "var(--tier-4-color)" }] },
+      { stochasticItems: [{ id: "6.1", name: "Figures", colorVar: "var(--tier-6-color)" }], hydraulicItems: [] }
+    ];
+  } else if (val === 'non_chs_rubble') {
+    canvasSequence = [
+      { stochasticItems: [{ id: "1.3", name: "Rubble Mound", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "2.2.1", name: "CDIP", colorVar: "var(--tier-2-color)", dashed: true }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "5.3.1", name: "Univariate: POT", colorVar: "var(--tier-5-color)", dashed: true }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "3.3", name: "PROS - Response Based", colorVar: "var(--tier-3-color)" }], 
+        hydraulicItems: [{ id: "4.3.1", name: "Rubble Mound: Seaside Stability", colorVar: "var(--tier-4-color)" }] }
+    ];
+  } else if (val === 'lcs_hazard') {
+    canvasSequence = [
+      { stochasticItems: [{ id: "1.5", name: "Hydrodynamic-Hazards Only", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "2.3.1", name: "NOAA", colorVar: "var(--tier-2-color)", dashed: true }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "3.4", name: "LCS", colorVar: "var(--tier-3-color)" }], 
+        hydraulicItems: [{ id: "4.5.3", name: "Waves: Setup", colorVar: "var(--tier-4-color)", dashed: true }] },
+      { stochasticItems: [{ id: "5.2", name: "LCS Statistical Analysis", colorVar: "var(--tier-5-color)" }], hydraulicItems: [] }
+    ];
+  }
+
+  renderPalette();
+  renderCanvas();
+}
+
+// Initialize on Load
 renderPalette();
 renderCanvas();
 </script>

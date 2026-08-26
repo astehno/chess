@@ -459,30 +459,6 @@ function updateDynamicGatingAndCollapse() {
   }
 }
 
-  // Handle Dynamic Hydraulic Options (Tier 4)
-  const selectedStructs = getSelectedStructureIds();
-  const tier4 = workflowData.find(tier => tier.id === "s4");
-  tier4.subs = [];
-  
-  if (selectedStructs.length === 0) {
-    tier4.subs.push({ id: "no_struct_notice", name: "Select Structure(s) in Stage 1 First", disabled: true });
-  } else {
-    selectedStructs.forEach(structId => {
-      const responses = hydraulicResponsesByStructure[structId] || [];
-      responses.forEach(resp => {
-        if (!tier4.subs.some(r => r.id === resp.id)) {
-          tier4.subs.push(resp);
-        }
-      });
-    });
-  }
-
-  // Handle LCS Statistical Analysis Gating
-  const lcsStatNode = workflowData.find(t => t.id === "s5").subs.find(sub => sub.id === "5.2");
-  if (lcsStatNode) {
-    lcsStatNode.disabled = !hasLcsSelection();
-  }
-}
 
 // Render Sidebar Palette
 function renderPalette() {
@@ -506,9 +482,9 @@ function createPaletteNode(item, colorVar) {
   const header = document.createElement('div');
   header.className = 'palette-header';
   
-  // const titleText = document.createElement('span');
-  // titleText.innerText = item.name;
-  // header.appendChild(titleText);
+   const titleText = document.createElement('span');
+   titleText.innerText = item.name;
+   header.appendChild(titleText);
 
   const hasSubs = item.subs && item.subs.length > 0;
 

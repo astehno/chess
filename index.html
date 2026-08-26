@@ -1,276 +1,539 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modular Workflow Hierarchy</title>
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --panel-bg: #1e293b;
-            --text-color: #f8fafc;
-            --border-color: #334155;
-            --step1-color: #0284c7;
-            --step2-color: #0d9488;
-            --step3-color: #7c3aed;
-            --step4-color: #d97706;
-            --step5-color: #475569;
-        }
+  <meta charset="UTF-8">
+  <title>Modular Workflow Builder</title>
+  <style>
+    :root {
+      /* Tier Palette Colors */
+      --tier-1-color: #3498db;
+      --tier-2-color: #2ecc71;
+      --tier-3-color: #e67e22;
+      --tier-4-color: #9b59b6;
+      --tier-5-color: #e74c3c;
+      --grayed-out: #7f8c8d;
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; flex-direction: column; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f6f9;
+    }
 
-        header {
-            height: 60px;
-            background: var(--panel-bg);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+    .container {
+      display: flex;
+      gap: 20px;
+    }
 
-        h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: 0.5px; }
-        .controls { display: flex; gap: 10px; }
+    /* Sidebar Palette */
+    .sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
 
-        button {
-            background: #334155;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
-        }
-        button:hover { background: #475569; }
-        button.primary { background: var(--step1-color); }
-        button.primary:hover { background: #0369a1; }
+    /* Main Builder Canvas */
+    .canvas-container {
+      flex-grow: 1;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-        /* Container & Flow Layout */
-        #workflow-container {
-            padding: 40px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 24px;
-            align-items: center;
-            justify-content: flex-start;
-        }
+    /* Responsive Workflow Layout (Wrapping Enabled) */
+    .workflow-canvas {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap; /* Allows steps to wrap cleanly to new lines */
+      align-items: center;
+      gap: 10px;
+      min-height: 350px;
+      padding: 20px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      flex-grow: 1;
+    }
 
-        /* Group / Vertical Stack for Parallel Operations */
-        .stage-column {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            position: relative;
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px dashed var(--border-color);
-            padding: 12px;
-            border-radius: 12px;
-            min-width: 220px;
-        }
+    /* Top Tier / Parallel Column Container Box */
+    .tier-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 12px;
+      color: white;
+      min-width: 180px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+      position: relative;
+    }
 
-        /* Node Cards */
-        .card {
-            background: var(--panel-bg);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            width: 240px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            position: relative;
-        }
+    .tier-title {
+      font-weight: bold;
+      font-size: 1.1em;
+      text-align: center;
+      margin-bottom: 5px;
+      width: 100%;
+      pointer-events: none;
+    }
 
-        .card-header {
-            padding: 8px 12px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: white;
-        }
+    /* Sub-tiers Stacked Vertically (Parallel Actions) */
+    .sub-tier-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
 
-        .card-body { padding: 12px; font-size: 0.85rem; }
+    /* Draggable Cell/Box Styling */
+    .box {
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: white;
+      font-weight: bold;
+      cursor: grab;
+      user-select: none;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.2s, opacity 0.2s;
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+    }
 
-        .card-body select, .card-body input {
-            width: 100%;
-            background: #0f172a;
-            border: 1px solid var(--border-color);
-            color: #f8fafc;
-            padding: 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-            font-size: 0.8rem;
-        }
+    .box.grayed, .tier-box.grayed {
+      background-color: var(--grayed-out) !important;
+    }
 
-        /* Stage Theming */
-        .stage-1 .card-header { background: var(--step1-color); }
-        .stage-2 .card-header { background: var(--step2-color); }
-        .stage-3 .card-header { background: var(--step3-color); }
-        .stage-4 .card-header { background: var(--step4-color); }
-        .stage-5 .card-header { background: var(--step5-color); }
+    /* Stack Control Button (Add Parallel Element) */
+    .stack-add-btn {
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px dashed white;
+      color: white;
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8em;
+      width: 100%;
+      margin-top: 5px;
+      transition: background 0.2s;
+    }
+    .stack-add-btn:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
 
-        /* Direct Sequential Arrow */
-        .connector-arrow {
-            color: #64748b;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    /* Palette Collapsible Styling */
+    .palette-item-wrapper {
+      margin: 8px 0;
+    }
 
-        /* Simplistic controls overlay for stacks */
-        .stack-actions {
-            display: flex;
-            gap: 6px;
-            margin-top: 4px;
-        }
-        
-        .btn-mini {
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            width: 100%;
-            justify-content: center;
-            background: #334155;
-            border: 1px solid #475569;
-        }
-        .btn-mini:hover { background: #475569; }
-        .btn-delete { background: #991b1b; }
-        .btn-delete:hover { background: #dc2626; }
-    </style>
+    .palette-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .collapse-btn {
+      background: rgba(255, 255, 255, 0.3);
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-left: 5px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .sub-tree {
+      display: none;
+      padding-left: 15px;
+      margin-top: 5px;
+    }
+
+    .sub-tree.expanded {
+      display: block !important;
+    }
+
+    /* Streamlined Drop Zones between workflow items */
+    .drop-zone {
+      width: 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #b0b0b0;
+      border-radius: 6px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      color: #777;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .drop-zone.drag-over {
+      border-color: #3498db;
+      background: rgba(52, 152, 219, 0.2);
+      color: #3498db;
+      transform: scale(1.15);
+    }
+
+    /* Modal Warning Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .modal-content img {
+      max-width: 300px;
+      display: block;
+      margin: 10px auto;
+    }
+  </style>
 </head>
 <body>
 
-    <header>
-        <h1><i class="fa-solid fa-diagram-project"></i> Modular Workflow Builder</h1>
-        <div class="controls">
-            <button class="primary" onclick="addStageGroup()"><i class="fa-solid fa-plus"></i> Add Next Sequential Step</button>
-            <button onclick="exportWorkflow()"><i class="fa-solid fa-download"></i> Export Configuration</button>
-        </div>
-    </header>
+<h2>Modular Workflow Builder</h2>
 
-    <main id="workflow-container">
-        <!-- Rendered dynamically -->
-    </main>
+<div class="container">
+  <!-- PALETTE SIDEBAR -->
+  <div class="sidebar" id="palette">
+    <h3>Available Steps</h3>
+    <div id="palette-items"></div>
+  </div>
 
-    <script>
-        // Preset stage types
-        const STAGE_TYPES = {
-            1: { title: "1. Hydrodynamic Forcing", icon: "fa-water", class: "stage-1", options: ["CHS Data", "Open-Source Data", "Field Measurements"] },
-            2: { title: "2. Probabilistic Sampling", icon: "fa-chart-line", class: "stage-2", options: ["PROS", "LCS"] },
-            3: { title: "3. Hydraulic Response", icon: "fa-shield-halved", class: "stage-3", options: ["Levees", "Rubble Mounds", "Floodwalls", "Dunes"] },
-            4: { title: "4. Hazard & Uncertainty", icon: "fa-triangle-exclamation", class: "stage-4", options: ["JPM", "EVA"] },
-            5: { title: "Output Considerations", icon: "fa-square-poll-vertical", class: "stage-5", options: ["Risk Maps", "CDF Curves", "System Reports"] }
-        };
+  <!-- WORKFLOW CANVAS -->
+  <div class="canvas-container">
+    <h3>Your Workflow</h3>
+    <p><small>Drag items to (+) drop zones. Stack cells vertically to run them simultaneously. Workflows wrap automatically when long.</small></p>
+    <div class="workflow-canvas" id="canvas"></div>
+  </div>
+</div>
 
-        // Data structure representing sequence of columns, where each column can have multiple parallel cells
-        let workflowData = [
-            { stageType: 1, parallelCells: ["CHS Data"] },
-            { stageType: 2, parallelCells: ["PROS"] },
-            { stageType: 3, parallelCells: ["Levees", "Floodwalls"] }, // Parallel execution
-            { stageType: 4, parallelCells: ["JPM"] },
-            { stageType: 5, parallelCells: ["Risk Maps"] }
-        ];
+<!-- WARNING MODAL -->
+<div class="modal" id="warningModal" onclick="closeModal()">
+  <div class="modal-content">
+    <h3 id="modalTitle">Prerequisites Violation Warning</h3>
+    <img src="https://via.placeholder.com/300x150?text=Order+Constraint+Warning" alt="Warning">
+    <p id="modalMsg">Click anywhere to dismiss and adjust your workflow sequence.</p>
+  </div>
+</div>
 
-        function renderWorkflow() {
-            const container = document.getElementById('workflow-container');
-            container.innerHTML = '';
+<script>
+// ==========================================
+// 1. DATA SCHEMA & CONFIGURATION
+// ==========================================
+const workflowData = [
+  {
+    id: "t1", name: "Tier 1: Hydrodynamic forcing", colorVar: "var(--tier-1-color)", disabled: false,
+    subs: [
+      { id: "1.1", name: "1.1 CHS" },
+      { id: "1.2", name: "1.2 Wave data", subs: [{ id: "1.2.1", name: "1.2.1 MOPS" }, { id: "1.2.2", name: "1.2.2 CDIP" }] },
+      { id: "1.3", name: "1.3 Water level data", subs: [{ id: "1.3.1a", name: "1.3.1 NOAA" }, { id: "1.3.1b", name: "1.3.1 Local" }] }
+    ]
+  },
+  {
+    id: "t2", name: "Tier 2: Probabilistic sampling", colorVar: "var(--tier-2-color)", disabled: false,
+    subs: [
+      { id: "2.1", name: "2.1 PROS", subs: [{ id: "2.1.1", name: "2.1.1 Response-based" }, { id: "2.1.2", name: "2.1.2 Frequency-based" }] },
+      { id: "2.2", name: "2.2 LCS" },
+      { id: "2.3", name: "2.3 Water level adjustments" }
+    ]
+  },
+  {
+    id: "t3", name: "Tier 3: Hydraulic response", colorVar: "var(--tier-3-color)", disabled: false,
+    subs: [
+      { id: "3.1", name: "3.1 Levee", subs: [{ id: "3.1.1", name: "3.1.1 Overtopping" }, { id: "3.1.2", name: "3.1.2 Runup" }] },
+      { id: "3.2", name: "3.2 Rubble mound", subs: [{ id: "3.2.1", name: "3.2.1 Overtopping" }, { id: "3.2.2", name: "3.2.2 Stability" }] }
+    ]
+  },
+  {
+    id: "t4", name: "Tier 4: Hazards and uncertainty", colorVar: "var(--tier-4-color)", disabled: true,
+    subs: [
+      { id: "4.1", name: "4.1 JPM" },
+      { id: "4.2", name: "4.2 EVA" }
+    ]
+  },
+  {
+    id: "t5", name: "Tier 5: Outputs", colorVar: "var(--tier-5-color)", disabled: false,
+    subs: [
+      { id: "5.1", name: "5.1 Figures" },
+      { id: "5.2", name: "5.2 Tables" }
+    ]
+  }
+];
 
-            workflowData.forEach((column, colIdx) => {
-                const stageMeta = STAGE_TYPES[column.stageType];
+let currentDraggedItem = null;
 
-                // Create Column Container (Stack)
-                const colElem = document.createElement('div');
-                colElem.className = `stage-column ${stageMeta.class}`;
-
-                // Render each card in the stack (Parallel elements)
-                column.parallelCells.forEach((cellVal, cellIdx) => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <div class="card-header">
-                            <span><i class="fa-solid ${stageMeta.icon}"></i> ${stageMeta.title}</span>
-                            ${column.parallelCells.length > 1 ? `<i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="removeParallelCell(${colIdx}, ${cellIdx})"></i>` : ''}
-                        </div>
-                        <div class="card-body">
-                            <label>Option / Method:</label>
-                            <select onchange="updateCellVal(${colIdx}, ${cellIdx}, this.value)">
-                                ${stageMeta.options.map(opt => `<option value="${opt}" ${opt === cellVal ? 'selected' : ''}>${opt}</option>`).join('')}
-                            </select>
-                        </div>
-                    `;
-                    colElem.appendChild(card);
-                });
-
-                // Stack controls (Add cell on top / same time)
-                const stackActions = document.createElement('div');
-                stackActions.className = 'stack-actions';
-                stackActions.innerHTML = `
-                    <button class="btn-mini" onclick="addParallelCell(${colIdx})"><i class="fa-solid fa-layer-group"></i> Run Parallel</button>
-                    <button class="btn-mini btn-delete" onclick="removeColumn(${colIdx})"><i class="fa-solid fa-trash"></i></button>
-                `;
-                colElem.appendChild(stackActions);
-
-                container.appendChild(colElem);
-
-                // Add separator arrow if not the last item
-                if (colIdx < workflowData.length - 1) {
-                    const arrow = document.createElement('div');
-                    arrow.className = 'connector-arrow';
-                    arrow.innerHTML = `<i class="fa-solid fa-arrow-right"></i>`;
-                    container.appendChild(arrow);
-                }
-            });
+const validationRules = [
+  {
+    id: "freq_prereq",
+    targetId: "2.1.2",
+    message: "Frequency-based sampling requires JPM (4.1) or EVA (4.2) to be added to the workflow first!",
+    validate: (sequence) => {
+      // Flatten sequence to check sequential step prerequisites
+      const flatList = sequence.flatMap(step => step.parallelItems || [step]);
+      for (let i = 0; i < flatList.length; i++) {
+        if (flatList[i].id === "2.1.2") {
+          const priorItems = flatList.slice(0, i);
+          const hasJpmOrEva = priorItems.some(item => item.id === "4.1" || item.id === "4.2");
+          if (!hasJpmOrEva) return false;
         }
+      }
+      return true;
+    }
+  }
+];
 
-        function addParallelCell(colIdx) {
-            const defaultOpt = STAGE_TYPES[workflowData[colIdx].stageType].options[0];
-            workflowData[colIdx].parallelCells.push(defaultOpt);
-            renderWorkflow();
-        }
+// Sequence stores columns. Each column can hold an array of parallel items.
+let canvasSequence = [];
+const collapsedPaletteTiers = new Set();
 
-        function removeParallelCell(colIdx, cellIdx) {
-            workflowData[colIdx].parallelCells.splice(cellIdx, 1);
-            renderWorkflow();
-        }
+// ==========================================
+// 2. RENDER PALETTE
+// ==========================================
+function renderPalette() {
+  const container = document.getElementById('palette-items');
+  container.innerHTML = '';
+  
+  workflowData.forEach(tier => {
+    container.appendChild(createPaletteNode(tier, tier.colorVar));
+  });
+}
 
-        function addStageGroup() {
-            const nextType = (workflowData.length % 5) + 1;
-            const defaultOpt = STAGE_TYPES[nextType].options[0];
-            workflowData.push({ stageType: nextType, parallelCells: [defaultOpt] });
-            renderWorkflow();
-        }
+function createPaletteNode(item, colorVar) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'palette-item-wrapper';
 
-        function removeColumn(colIdx) {
-            workflowData.splice(colIdx, 1);
-            renderWorkflow();
-        }
+  const box = document.createElement('div');
+  box.className = `box ${item.disabled ? 'grayed' : ''}`;
+  box.style.backgroundColor = colorVar;
+  
+  const header = document.createElement('div');
+  header.className = 'palette-header';
+  
+  const titleText = document.createElement('span');
+  titleText.innerText = item.name;
+  header.appendChild(titleText);
 
-        function updateCellVal(colIdx, cellIdx, val) {
-            workflowData[colIdx].parallelCells[cellIdx] = val;
-        }
+  const hasSubs = item.subs && item.subs.length > 0;
 
-        function exportWorkflow() {
-            const blob = new Blob([JSON.stringify(workflowData, null, 2)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'workflow.json';
-            a.click();
-        }
+  if (hasSubs) {
+    const collapseBtn = document.createElement('button');
+    collapseBtn.className = 'collapse-btn';
+    collapseBtn.type = 'button';
+    const isCollapsed = collapsedPaletteTiers.has(item.id);
+    collapseBtn.innerText = isCollapsed ? '+' : '−';
+    
+    collapseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (collapsedPaletteTiers.has(item.id)) {
+        collapsedPaletteTiers.delete(item.id);
+      } else {
+        collapsedPaletteTiers.add(item.id);
+      }
+      renderPalette();
+    });
+    header.appendChild(collapseBtn);
+  }
 
-        // Initial Load
-        renderWorkflow();
-    </script>
+  box.appendChild(header);
+
+  box.draggable = true;
+  box.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    currentDraggedItem = JSON.parse(JSON.stringify(item));
+    e.dataTransfer.setData("text/plain", item.id);
+    e.dataTransfer.effectAllowed = "copy";
+  });
+
+  wrapper.appendChild(box);
+
+  if (hasSubs) {
+    const subContainer = document.createElement('div');
+    subContainer.className = 'sub-tree';
+    const isCollapsed = collapsedPaletteTiers.has(item.id);
+
+    if (!isCollapsed) {
+      subContainer.classList.add('expanded');
+    }
+
+    item.subs.forEach(sub => {
+      sub.colorVar = colorVar;
+      if (item.disabled) sub.disabled = true;
+      subContainer.appendChild(createPaletteNode(sub, colorVar));
+    });
+    wrapper.appendChild(subContainer);
+  }
+
+  return wrapper;
+}
+
+// ==========================================
+// 3. CANVAS & PARALLEL STACKING
+// ==========================================
+function renderCanvas() {
+  const canvas = document.getElementById('canvas');
+  canvas.innerHTML = '';
+
+  canvas.appendChild(createDropZone(0));
+
+  canvasSequence.forEach((colGroup, colIndex) => {
+    const nodeEl = createCanvasColumn(colGroup, colIndex);
+    canvas.appendChild(nodeEl);
+    canvas.appendChild(createDropZone(colIndex + 1));
+  });
+}
+
+function createDropZone(index) {
+  const zone = document.createElement('div');
+  zone.className = 'drop-zone';
+  zone.innerText = '+';
+
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+    zone.classList.add('drag-over');
+  });
+
+  zone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.remove('drag-over');
+  });
+
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.remove('drag-over');
+    
+    if (!currentDraggedItem) return;
+
+    // Wrap item inside a column container for parallel stacking support
+    const newColumn = {
+      isStack: true,
+      parallelItems: [currentDraggedItem]
+    };
+
+    canvasSequence.splice(index, 0, newColumn);
+    currentDraggedItem = null;
+
+    renderCanvas();
+    validateRules();
+  });
+
+  return zone;
+}
+
+function createCanvasColumn(colGroup, colIndex) {
+  const tierBox = document.createElement('div');
+  const baseColor = colGroup.parallelItems[0]?.colorVar || 'var(--tier-1-color)';
+  
+  tierBox.className = 'tier-box';
+  tierBox.style.backgroundColor = baseColor;
+
+  const subContainer = document.createElement('div');
+  subContainer.className = 'sub-tier-container';
+
+  // Render each stacked parallel item in this column
+  colGroup.parallelItems.forEach((item, itemIndex) => {
+    const box = document.createElement('div');
+    box.className = `box ${item.disabled ? 'grayed' : ''}`;
+    box.style.backgroundColor = 'rgba(0, 0, 0, 0.25)';
+    box.innerText = item.name;
+
+    box.draggable = true;
+    box.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      currentDraggedItem = item;
+    });
+    box.addEventListener('dragend', (e) => handleRemoveItem(e, colIndex, itemIndex));
+
+    subContainer.appendChild(box);
+  });
+
+  tierBox.appendChild(subContainer);
+
+  // Stack Action: Add parallel item button
+  const addParallelBtn = document.createElement('button');
+  addParallelBtn.className = 'stack-add-btn';
+  addParallelBtn.innerText = '+ Run Parallel';
+  addParallelBtn.title = 'Add another action to run simultaneously at this step';
+  addParallelBtn.onclick = () => {
+    const dup = JSON.parse(JSON.stringify(colGroup.parallelItems[0]));
+    colGroup.parallelItems.push(dup);
+    renderCanvas();
+  };
+  tierBox.appendChild(addParallelBtn);
+
+  return tierBox;
+}
+
+function handleRemoveItem(e, colIndex, itemIndex) {
+  if (e.dataTransfer.dropEffect === "none") {
+    canvasSequence[colIndex].parallelItems.splice(itemIndex, 1);
+    // If column has no items left, remove column entirely
+    if (canvasSequence[colIndex].parallelItems.length === 0) {
+      canvasSequence.splice(colIndex, 1);
+    }
+    renderCanvas();
+    validateRules();
+  }
+  currentDraggedItem = null;
+}
+
+// ==========================================
+// 4. RULE ENGINE
+// ==========================================
+function validateRules() {
+  for (const rule of validationRules) {
+    const isValid = rule.validate(canvasSequence);
+    if (!isValid) {
+      showWarning(rule.message);
+      break;
+    }
+  }
+}
+
+function showWarning(message) {
+  document.getElementById('modalMsg').innerText = message || "Order constraint violated.";
+  document.getElementById('warningModal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('warningModal').style.display = 'none';
+}
+
+// Initialize on load
+renderPalette();
+renderCanvas();
+</script>
 </body>
 </html>

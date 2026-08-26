@@ -110,7 +110,7 @@
       border: 2px dashed #ccc;
       border-radius: 8px;
       flex-grow: 1;
-      overflow-x: auto;
+      flex-wrap: wrap;
     }
 
     .column-box {
@@ -276,7 +276,9 @@
     <option value="lcs_hazard">LCS Hydro-Hazard Workflow</option>
   </select>
   <button class="btn" onclick="loadPreset()">Load Preset</button>
+  <button class="btn" onclick="exportWorkflow()" style="margin-left: 4px;">Export Workflow</button>
   <button class="btn btn-danger" onclick="resetCanvas()">Reset Canvas</button>
+  <button class="btn" onclick="goToStepSummary()" style="background: #2c3e50; margin-left: 4px;">View All Steps</button>
 </div>
 
 <div class="container">
@@ -339,18 +341,13 @@ const workflowData = [
     subs: [
       { id: "5.1", name: "JPM Analysis" },
       { id: "5.2", name: "LCS Statistical Analysis" },
-      {
-        id: "5.3", name: "Pre-Processing",
-        subs: [
-          { id: "5.3.1", name: "Univariate: POT", dashed: true },
-          { id: "5.3.2", name: "Univariate: MLM Fit", dashed: true },
-          { id: "5.3.3", name: "Univariate: QQ Optimization", dashed: true },
-          { id: "5.3.4", name: "Univariate: Bootstrap", dashed: true },
-          { id: "5.3.5", name: "Univariate: PST", dashed: true },
-          { id: "5.3.6", name: "Multivariate: Correlation", dashed: true },
-          { id: "5.3.7", name: "Multivariate: Copula", dashed: true }
-        ]
-      },
+      { id: "5.3.1", name: "Univariate: POT", dashed: true },
+      { id: "5.3.2", name: "Univariate: MLM Fit", dashed: true },
+      { id: "5.3.3", name: "Univariate: QQ Optimization", dashed: true },
+      { id: "5.3.4", name: "Univariate: Bootstrap", dashed: true },
+      { id: "5.3.5", name: "Univariate: PST", dashed: true },
+      { id: "5.3.6", name: "Multivariate: Correlation", dashed: true },
+      { id: "5.3.7", name: "Multivariate: Copula", dashed: true },
       { id: "5.4", name: "Storm Sampling Tool" },
       { id: "5.5", name: "CIRP Integration" }
     ]
@@ -754,40 +751,57 @@ function resetCanvas() {
   renderCanvas();
 }
 
+/* --- Preset Management (Move loadPreset and exportWorkflow to external file for Git) --- */
+
+// ADD THIS FUNCTION (For the new Export Button)
+function exportWorkflow() {
+  const dataToExport = getFlatCanvasItems();
+  
+  if (dataToExport.length === 0) {
+    alert("Canvas is empty. Add items before exporting.");
+    return;
+  }
+  
+  // Format the data as a clean JSON string for inclusion in loadPreset function
+  const formattedJson = JSON.stringify(dataToExport, null, 2);
+  
+  // Generate a JavaScript snippet that can be pasted into the loadPreset switch
+  const exportString = `case 'your_preset_id_here':\n  data = ${formattedJson};\n  break;`;
+  
+  prompt("Copy this configuration data. Paste it into your loadPreset function (inside preset_loader.js):", exportString);
+}
+
+// ADD THIS FUNCTION (For the 'View All Steps' Button)
+function goToStepSummary() {
+  // Navigation to an internal page is not possible in this standalone environment.
+  // Instead, we prompt the user to use the generated HTML (provided below).
+  alert("Standalone environment cannot navigate between pages. Use the generated HTML snippet to create 'chess_pt_step_summary.html' in your project directory.");
+}
+
+/* --- Modification to loadPreset (Prepares it to be external) --- */
+
+// CHANGE THIS FUNCTION: Prepare it to receive data from an external function
 function loadPreset() {
   const val = document.getElementById('presetSelect').value;
   resetCanvas();
+  
   if (!val) return;
 
-  if (val === 'chs_levee') {
-    canvasSequence = [
-      { stochasticItems: [{ id: "1.1", name: "Levee", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "2.1", name: "2.1 CHS Data", colorVar: "var(--tier-2-color)" }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "5.1", name: "JPM Analysis", colorVar: "var(--tier-5-color)" }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "3.2", name: "PROS - Frequency Based", colorVar: "var(--tier-3-color)" }], 
-        hydraulicItems: [{ id: "4.1.1", name: "Levee: Overtopping Rate", colorVar: "var(--tier-4-color)" }] },
-      { stochasticItems: [{ id: "6.1", name: "Figures", colorVar: "var(--tier-6-color)" }], hydraulicItems: [] }
-    ];
-  } else if (val === 'non_chs_rubble') {
-    canvasSequence = [
-      { stochasticItems: [{ id: "1.3", name: "Rubble Mound", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "2.2.1", name: "CDIP", colorVar: "var(--tier-2-color)", dashed: true }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "5.3.1", name: "Univariate: POT", colorVar: "var(--tier-5-color)", dashed: true }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "3.3", name: "PROS - Response Based", colorVar: "var(--tier-3-color)" }], 
-        hydraulicItems: [{ id: "4.3.1", name: "Rubble Mound: Seaside Stability", colorVar: "var(--tier-4-color)" }] }
-    ];
-  } else if (val === 'lcs_hazard') {
-    canvasSequence = [
-      { stochasticItems: [{ id: "1.5", name: "Hydrodynamic-Hazards Only", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "2.3.1", name: "NOAA", colorVar: "var(--tier-2-color)", dashed: true }], hydraulicItems: [] },
-      { stochasticItems: [{ id: "3.4", name: "LCS", colorVar: "var(--tier-3-color)" }], 
-        hydraulicItems: [{ id: "4.5.3", name: "Waves: Setup", colorVar: "var(--tier-4-color)", dashed: true }] },
-      { stochasticItems: [{ id: "5.2", name: "LCS Statistical Analysis", colorVar: "var(--tier-5-color)" }], hydraulicItems: [] }
-    ];
+  // We call a function (getPresetData) that we assume exists in the external file 'preset_loader.js'
+  // When running locally, if getPresetData() doesn't exist, this will error.
+  // You will move the switch logic inside loadPreset into getPresetData inside preset_loader.js.
+  
+  try {
+    const data = getPresetData(val); // Assume this function returns the configuration data array
+    if (data && data.length > 0) {
+      canvasSequence = data; // Externally generated, pre-formatted data array
+      
+      renderPalette();
+      renderCanvas();
+    }
+  } catch (e) {
+    console.warn("Preset loader function not found. Did you create 'preset_loader.js' and move the logic there?");
   }
-
-  renderPalette();
-  renderCanvas();
 }
 
 // Initialize on Load

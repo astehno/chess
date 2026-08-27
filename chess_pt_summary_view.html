@@ -132,19 +132,16 @@ function renderSummaryView() {
 const container = document.getElementById('summary-content') || document.getElementById('summaryContent');
   if (!container) return;
 
-  // Retrieve canvas workflow sequence from local storage
-const sequence = (typeof loadWorkflowSequence === 'function') 
-    ? loadWorkflowSequence() 
-    : JSON.parse(localStorage.getItem('chess_pt_workflow_sequence') || '[]');
+  // Retrieve AVAILABLE_ITEMS from index.html / global scope
+  const itemsCatalog = (window.opener && window.opener.AVAILABLE_ITEMS) 
+    || window.AVAILABLE_ITEMS 
+    || (typeof AVAILABLE_ITEMS !== 'undefined' ? AVAILABLE_ITEMS : []);
 
-  // Flatten BOTH stochasticItems and hydraulicItems arrays across all columns
-  const flatItems = sequence.flatMap(col => [
-    ...(col.stochasticItems || []), 
-    ...(col.hydraulicItems || [])
-  ]);
+  container.innerHTML = '';
 
-  if (flatItems.length === 0) {
-    container.innerHTML = '<div style="padding: 20px; color: #64748b; font-weight: bold; text-align: center;">No workflow items found on canvas. Return to builder to add steps.</div>';
+  // Fallback if AVAILABLE_ITEMS cannot be read across pages
+  if (!itemsCatalog || itemsCatalog.length === 0) {
+    container.innerHTML = '<div style="padding: 20px; color: #64748b; font-weight: bold; text-align: center;">Unable to load items catalog. Please ensure index.html defines AVAILABLE_ITEMS globally.</div>';
     return;
   }
 
@@ -161,8 +158,8 @@ const sequence = (typeof loadWorkflowSequence === 'function')
   container.innerHTML = '';
 
 tiers.forEach(tier => {
-    // Collect all items starting with this tier's prefix
-    const matchingItems = flatItems.filter(item => item.id && item.id.startsWith(tier.prefix));
+    // Collect all catalog items matching the current tier prefix
+    const matchingItems = itemsCatalog.filter(item => item.id && item.id.startsWith(tier.prefix));
 
     if (matchingItems.length > 0) {
       const card = document.createElement('div');
@@ -180,7 +177,7 @@ tiers.forEach(tier => {
         const box = document.createElement('div');
         box.className = `box ${item.dashed ? 'dashed-border' : ''}`;
         box.style.backgroundColor = item.colorVar || 'var(--tier-1-color)';
-        box.innerText = item.name;
+        box.innerText = `${item.id} ${item.name}`;
         grid.appendChild(box);
       });
 

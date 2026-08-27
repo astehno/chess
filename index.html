@@ -2,259 +2,151 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CHESS-PT Interactive Workflow Builder</title>
+  <title>CHESS-PT Workflow Builder</title>
   <style>
     :root {
       --tier-1-color: #e3f2fd;
       --tier-2-color: #e0f2f1;
       --tier-3-color: #fff3e0;
       --tier-4-color: #f3e5f5;
-      --tier-5-color: #ede7f6;
+      --tier-5-color: #f3e5f5;
       --tier-6-color: #e8f5e9;
     }
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
-    .header-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 2px solid #ddd; }
-    .btn { padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background-color: #0056b3; }
-    .btn-secondary { background-color: #6c757d; }
-    .btn-secondary:hover { background-color: #5a6268; }
-
-    /* Controls Bar */
-    .controls-bar { display: flex; gap: 15px; align-items: center; margin: 15px 0; background: #fff; padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
-    .controls-bar select { padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.9em; }
-
-    /* Validation Alerts */
-    .alert-container { margin: 15px 0; }
-    .alert-box { padding: 10px 15px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em; }
-    .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-
-    /* Layout Containers */
-    .app-container { display: flex; gap: 20px; margin-top: 15px; }
-    .sidebar { width: 320px; background: white; border: 1px solid #ccc; border-radius: 6px; padding: 15px; max-height: 80vh; overflow-y: auto; }
-    .canvas-area { flex-grow: 1; background: white; border: 2px dashed #007bff; border-radius: 6px; padding: 20px; min-height: 500px; }
-    .canvas-area.drag-over { background-color: #e3f2fd; border-color: #0056b3; }
-
-    /* Palette & Drop Item Cards */
-    .palette-item, .canvas-item {
-      padding: 10px 14px; margin: 8px 0; border: 1px solid #bbb; border-radius: 4px;
-      cursor: grab; user-select: none; transition: all 0.2s ease; font-size: 0.9em;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f8f9fa;
     }
-    .palette-item:active, .canvas-item:active { cursor: grabbing; }
-    
-    /* State Modifiers */
-    .dashed-border { border-style: dashed !important; border-color: #333 !important; }
-    .highlighted-cell { background-color: #fff59d !important; font-weight: bold; }
-    .grayed-out-cell { opacity: 0.35 !important; background-color: #e0e0e0 !important; cursor: not-allowed !important; }
-    
-    .canvas-item { display: flex; justify-content: space-between; align-items: center; }
-    .remove-btn { color: #dc3545; font-weight: bold; cursor: pointer; padding: 0 4px; }
-    .remove-btn:hover { color: #a71d2a; }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .btn {
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    .canvas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+    }
+    .tier-column {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .item-tile {
+      padding: 8px 12px;
+      margin: 6px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+    .item-tile.selected {
+      border: 2px solid #0056b3;
+      font-weight: bold;
+    }
+    .item-tile.dashed-border {
+      border-style: dashed;
+      border-color: #333;
+    }
+    .item-tile.highlighted-cell {
+      background-color: #fff59d !important;
+    }
+    .item-tile.grayed-out-cell {
+      opacity: 0.35;
+      background-color: #e0e0e0 !important;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
 
 <div class="header-bar">
-  <h2>CHESS-PT Drag & Drop Workflow Builder</h2>
-  <button class="btn" onclick="navigateToSummary()">View Summary & Wiki</button>
+  <h2>CHESS-PT Interactive Workflow Builder</h2>
+  <button class="btn" onclick="navigateToSummary()">Open Summary & Wiki</button>
 </div>
 
-<!-- Controls & Pre-Made Workflows -->
-<div class="controls-bar">
-  <label for="premadeSelect"><strong>Load Pre-Made Workflow:</strong></label>
-  <select id="premadeSelect" onchange="loadPremadeWorkflow(this.value)">
-    <option value="">-- Select Template --</option>
-  </select>
-  <button class="btn btn-secondary" onclick="clearCanvas()">Clear Canvas</button>
-</div>
+<div class="canvas-grid" id="canvasItems"></div>
 
-<!-- Validation Alerts -->
-<div id="statusAlertContainer" class="alert-container"></div>
-
-<div class="app-container">
-  <!-- Left Palette Sidebar -->
-  <div class="sidebar" id="paletteSidebar">
-    <h3>Available Components</h3>
-    <small>Drag items onto the canvas building area</small>
-    <div id="paletteItems"></div>
-  </div>
-
-  <!-- Main Drag & Drop Canvas -->
-  <div class="canvas-area" id="workflowCanvas" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-    <h3>Active Workflow Canvas</h3>
-    <p><small>Drop components here to configure your execution pipeline. Click '×' to remove.</small></p>
-    <div id="canvasActiveItems"></div>
-  </div>
-</div>
-
-<!-- Shared Configuration Script Loaded First -->
+<!-- Load shared configuration file -->
 <script src="chess_pt_config.js"></script>
 
 <script>
-// Retrieve initial state from storage or start empty
+// Retrieve active selections from shared localStorage state
 let activeSelections = loadWorkflowState();
-let draggedItemId = null;
-
-function populatePremadeDropdown() {
-  const select = document.getElementById('premadeSelect');
-  if (typeof PREMADE_WORKFLOWS === 'undefined') return;
-  
-  Object.keys(PREMADE_WORKFLOWS).forEach(key => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.innerText = PREMADE_WORKFLOWS[key].name;
-    select.appendChild(opt);
-  });
-}
-
-function loadPremadeWorkflow(key) {
-  if (!key || !PREMADE_WORKFLOWS[key]) return;
-  activeSelections = new Set(PREMADE_WORKFLOWS[key].items);
-  saveWorkflowState(activeSelections);
-  renderApp();
-  document.getElementById('premadeSelect').value = "";
-}
-
-function clearCanvas() {
-  activeSelections.clear();
-  saveWorkflowState(activeSelections);
-  renderApp();
-}
 
 function navigateToSummary() {
   saveWorkflowState(activeSelections);
   window.location.href = "chess_pt_summary_view.html";
 }
 
-// Drag and Drop Logic
-function handleDragStart(e, id, isGrayed) {
-  if (isGrayed) {
-    e.preventDefault();
-    return;
-  }
-  draggedItemId = id;
-  e.dataTransfer.setData("text/plain", id);
-}
-
-function handleDragOver(e) {
-  e.preventDefault();
-  e.currentTarget.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
-
-function handleDrop(e) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
+function toggleSelection(itemId, isGrayed) {
+  if (isGrayed) return;
   
-  const id = e.dataTransfer.getData("text/plain") || draggedItemId;
-  if (id && !activeSelections.has(id)) {
-    activeSelections.add(id);
-    saveWorkflowState(activeSelections);
-    renderApp();
+  if (activeSelections.has(itemId)) {
+    activeSelections.delete(itemId);
+  } else {
+    activeSelections.add(itemId);
   }
-}
-
-function removeItem(id) {
-  activeSelections.delete(id);
+  
   saveWorkflowState(activeSelections);
-  renderApp();
+  renderCanvas();
 }
 
-function renderAlerts(grayedOutSet) {
-  const container = document.getElementById('statusAlertContainer');
+function renderCanvas() {
+  const container = document.getElementById('canvasItems');
   container.innerHTML = '';
 
-  const issues = evaluateWorkflowStatus(activeSelections);
-  issues.forEach(issue => {
-    const box = document.createElement('div');
-    box.className = `alert-box alert-${issue.type}`;
-    box.innerHTML = `<strong>[${issue.type.toUpperCase()}]</strong> ${issue.message}`;
-    container.appendChild(box);
-  });
-}
-
-function renderApp() {
-  const paletteContainer = document.getElementById('paletteItems');
-  const canvasContainer = document.getElementById('canvasActiveItems');
-  
-  paletteContainer.innerHTML = '';
-  canvasContainer.innerHTML = '';
-
   const grayedOutSet = calculateGrayedOutIds(activeSelections);
-  renderAlerts(grayedOutSet);
-
-  // Render Palette items from shared workflowData
-  const schema = typeof workflowData !== 'undefined' ? workflowData : CHESS_WORKFLOW_SCHEMA;
-  schema.forEach(tier => {
-    const tierGroup = document.createElement('div');
-    const header = document.createElement('h4');
-    header.innerText = tier.name;
-    header.style.margin = "12px 0 4px 0";
-    tierGroup.appendChild(header);
+  
+  workflowData.forEach(tier => {
+    const col = document.createElement('div');
+    col.className = 'tier-column';
+    
+    const title = document.createElement('h3');
+    title.innerText = tier.name;
+    col.appendChild(title);
 
     tier.subs.forEach(item => {
+      const tile = document.createElement('div');
       const isGrayed = grayedOutSet.has(item.id);
       const isSelected = activeSelections.has(item.id);
 
-      const div = document.createElement('div');
-      let classList = ['palette-item'];
+      let classList = ['item-tile'];
       if (item.dashed) classList.push('dashed-border');
       if (item.highlight) classList.push('highlighted-cell');
+      if (isSelected) classList.push('selected');
       if (isGrayed) classList.push('grayed-out-cell');
 
-      div.className = classList.join(' ');
-      div.innerText = `${item.id} ${item.name} ${isSelected ? '✓' : ''}`;
-      
+      tile.className = classList.join(' ');
+      tile.innerText = `${item.id} ${item.name}`;
+
       if (!isGrayed) {
-        div.style.backgroundColor = tier.colorVar;
-        div.draggable = true;
-        div.ondragstart = (e) => handleDragStart(e, item.id, false);
-      } else {
-        div.draggable = false;
-        div.ondragstart = (e) => handleDragStart(e, item.id, true);
+        tile.style.backgroundColor = isSelected ? '#bbdefb' : tier.colorVar;
       }
 
-      tierGroup.appendChild(div);
+      tile.onclick = () => toggleSelection(item.id, isGrayed);
+      col.appendChild(tile);
     });
 
-    paletteContainer.appendChild(tierGroup);
+    container.appendChild(col);
   });
-
-  // Render dropped items on the active canvas
-  if (activeSelections.size === 0) {
-    canvasContainer.innerHTML = '<p style="color: #888;">No components placed on canvas yet. Drag items from the left or select a template above.</p>';
-  } else {
-    activeSelections.forEach(id => {
-      const itemData = CHESS_ITEM_MAP.get(id);
-      if (!itemData) return;
-
-      const isGrayed = grayedOutSet.has(id);
-      const div = document.createElement('div');
-      let classList = ['canvas-item'];
-      if (itemData.dashed) classList.push('dashed-border');
-      if (itemData.highlight) classList.push('highlighted-cell');
-      if (isGrayed) classList.push('grayed-out-cell');
-
-      div.className = classList.join(' ');
-      if (!isGrayed) div.style.backgroundColor = itemData.colorVar;
-
-      div.innerHTML = `
-        <span><strong>${itemData.id}</strong> ${itemData.name} <small>(${itemData.tierName})</small></span>
-        <span class="remove-btn" onclick="removeItem('${id}')" title="Remove Item">×</span>
-      `;
-
-      canvasContainer.appendChild(div);
-    });
-  }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  populatePremadeDropdown();
-  renderApp();
-});
+document.addEventListener("DOMContentLoaded", renderCanvas);
 </script>
 </body>
 </html>

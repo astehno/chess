@@ -306,7 +306,14 @@ const collapsedPaletteTiers = new Set();
 
 
 function saveState() {
-  saveWorkflowSequence(canvasSequence);
+  if (typeof saveWorkflowSequence === 'function') {
+    saveWorkflowSequence(canvasSequence);
+  }
+}
+
+function navigateToSummary() {
+  saveState();
+  window.location.href = "chess_pt_summary_view.html";
 }
   
  

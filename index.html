@@ -2,151 +2,819 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CHESS-PT Workflow Builder</title>
+  <title>Modular Coastal Workflow Builder</title>
   <style>
-    :root {
-      --tier-1-color: #e3f2fd;
-      --tier-2-color: #e0f2f1;
-      --tier-3-color: #fff3e0;
-      --tier-4-color: #f3e5f5;
-      --tier-5-color: #f3e5f5;
-      --tier-6-color: #e8f5e9;
+:root {
+      --tier-1-color: #0EA5E9; /* Cyan / Bright Sky (Structures - High contrast against dark canvas) */
+      --tier-2-color: #2563EB; /* Deep Blue (Hydrodynamics) */
+      --tier-3-color: #D97706; /* Amber Gold (Probabilistic Sampling) */
+      --tier-4-color: #7C3AED; /* Purple / Violet (Hydraulic Responses) */
+      --tier-5-color: #C2410C; /* Terracotta / Coral Rose (Hazards & Uncertainty - Replaces Red) */
+      --tier-6-color: #059669; /* Emerald Green (Outputs & Reports) */
+      --grayed-out: #94A3B8;   /* Slate Gray */
     }
+
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f8f9fa;
+      margin: 15px;
+      background-color: #f4f6f9;
     }
-    .header-bar {
+
+    .top-controls {
       display: flex;
-      justify-content: space-between;
+      gap: 12px;
       align-items: center;
-      margin-bottom: 20px;
+      background: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      margin-bottom: 15px;
     }
+
+    .top-controls label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .logo-header {
+      font-size: 1.2em;
+      font-weight: 800;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+      margin-right: 8px;
+      padding-right: 12px;
+      border-right: 2px solid #cbd5e1;
+    }
+    
     .btn {
-      padding: 8px 16px;
-      background-color: #007bff;
-      color: white;
+      padding: 6px 12px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      font-weight: bold;
+      background: #3498db;
+      color: white;
+      transition: background 0.2s;
     }
-    .btn:hover {
-      background-color: #0056b3;
-    }
-    .canvas-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+
+    .btn:hover { background: #2980b9; }
+    .btn-danger { background: #e74c3c; }
+    .btn-danger:hover { background: #c0392b; }
+
+    .container {
+      display: flex;
       gap: 15px;
     }
-    .tier-column {
-      background: white;
-      border: 1px solid #ccc;
+
+    .sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .canvas-container {
+      flex-grow: 1;
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .inline-warning {
+      display: none;
+      background-color: #fde8e8;
+      border: 1px solid #e74c3c;
+      color: #c0392b;
+      padding: 10px;
       border-radius: 6px;
-      padding: 12px;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 0.9em;
     }
-    .item-tile {
-      padding: 8px 12px;
-      margin: 6px 0;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
+
+    .workflow-canvas {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 8px;
+      min-height: 350px;
+      padding: 15px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      flex-grow: 1;
+      overflow-x: auto;
+    }
+
+    .column-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #1E293B; /* Slate Navy - Contrasts clearly with all Tier colors */
+      min-width: 190px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+      position: relative;
+    }
+
+    .column-title {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #bdc3c7;
+      margin-bottom: 2px;
+      pointer-events: none;
+    }
+
+    .stack-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .stack-divider {
+      width: 100%;
+      height: 1px;
+      background: #4a6572;
+      margin: 4px 0;
+    }
+
+    .section-label {
+      font-size: 0.65em;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .box {
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: white;
+      font-size: 0.85em;
+      font-weight: bold;
+      cursor: grab;
       user-select: none;
-      transition: all 0.2s ease;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.2s, opacity 0.2s, border 0.2s;
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
     }
-    .item-tile.selected {
-      border: 2px solid #0056b3;
+
+    .box.dashed-border {
+      border: 2px dashed #000000 !important;
+    }
+
+    .box.violating {
+      border: 3px solid #ff3838 !important;
+      animation: pulse-border 1.2s infinite;
+    }
+
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 0 0 rgba(255, 56, 56, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 56, 56, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 56, 56, 0); }
+    }
+
+    .box.grayed {
+      background-color: var(--grayed-out) !important;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      font-size: 11px;
       font-weight: bold;
     }
-    .item-tile.dashed-border {
-      border-style: dashed;
-      border-color: #333;
+    .delete-btn:hover { color: #fff; }
+
+    .palette-item-wrapper {
+      margin: 6px 0;
     }
-    .item-tile.highlighted-cell {
-      background-color: #fff59d !important;
+
+    .palette-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
     }
-    .item-tile.grayed-out-cell {
-      opacity: 0.35;
-      background-color: #e0e0e0 !important;
-      cursor: not-allowed;
+
+    .collapse-btn {
+      background: rgba(255, 255, 255, 0.3);
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: 5px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .sub-tree {
+      display: none;
+      padding-left: 12px;
+      margin-top: 4px;
+    }
+
+    .sub-tree.expanded {
+      display: block !important;
+    }
+
+    .drop-zone {
+      width: 35px;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #a0aec0;
+      background-color: #edf2f7;
+      border-radius: 6px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      color: #4a5568;
+      font-weight: bold;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .drop-zone.drag-over {
+      border-color: #3498db;
+      background: rgba(52, 152, 219, 0.25);
+      color: #2980b9;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
 
-<div class="header-bar">
-  <h2>CHESS-PT Interactive Workflow Builder</h2>
-  <button class="btn" onclick="navigateToSummary()">Open Summary & Wiki</button>
+<div class="top-controls">
+  <span class="logo-header">CHESS-PT</span>
+  <label for="presetSelect">Demonstration Preset:</label>
+  <select id="presetSelect" onchange="loadPreset()">
+    <option value="">-- Select Workflow Preset --</option>
+    <option value="chs_levee">CHS Levee Analysis</option>
+    <option value="non_chs_rubble">Non-CHS Rubble Mound with Pre-Processing</option>
+    <option value="lcs_hazard">LCS Hydro-Hazard Workflow</option>
+  </select>
+  <button class="btn" onclick="loadPreset()">Load Preset</button>
+  <button class="btn btn-danger" onclick="resetCanvas()">Reset Canvas</button>
 </div>
 
-<div class="canvas-grid" id="canvasItems"></div>
+<div class="container">
+  <div class="sidebar" id="palette">
+    <h3>Available Steps</h3>
+    <div id="palette-items"></div>
+  </div>
 
-<!-- Load shared configuration file -->
-<script src="chess_pt_config.js"></script>
+  <div class="canvas-container">
+    <h3>Workflow Canvas</h3>
+    <div class="inline-warning" id="inlineWarning"></div>
+    <div class="workflow-canvas" id="canvas"></div>
+  </div>
+</div>
 
 <script>
-// Retrieve active selections from shared localStorage state
-let activeSelections = loadWorkflowState();
+// Dashboard & Schema Definition
+const workflowData = [
+  {
+    id: "s1", name: "1. Structure Selection", colorVar: "var(--tier-1-color)",
+    subs: [
+      { id: "1.1", name: "Levee" },
+      { id: "1.2", name: "Floodwall" },
+      { id: "1.3", name: "Rubble Mound" },
+      { id: "1.4", name: "NNBF" },
+      { id: "1.5", name: "Hydrodynamic-Hazards Only" }
+    ]
+  },
+  {
+    id: "s2", name: "2. Hydrodynamic Forcing", colorVar: "var(--tier-2-color)",
+    subs: [
+      { id: "2.1", name: "CHS Data" },
+      { id: "2.2.1", name: "Waves: CDIP", dashed: true },
+      { id: "2.2.2", name: "Waves: WIS", dashed: true },
+      { id: "2.2.3", name: "Waves: MOPS", dashed: true },
+      { id: "2.2.4", name: "Waves: Locally Measured", dashed: true },
 
-function navigateToSummary() {
-  saveWorkflowState(activeSelections);
-  window.location.href = "chess_pt_summary_view.html";
-}
-
-function toggleSelection(itemId, isGrayed) {
-  if (isGrayed) return;
-  
-  if (activeSelections.has(itemId)) {
-    activeSelections.delete(itemId);
-  } else {
-    activeSelections.add(itemId);
+      { id: "2.3.1", name: "WL: NOAA", dashed: true },
+      { id: "2.3.2", name: "WL: Locally Measured", dashed: true },
+      { id: "2.4", name: "Manual Deterministic Entry" }
+    ]
+  },
+  {
+    id: "s3", name: "3. Probabilistic Sampling", colorVar: "var(--tier-3-color)",
+    subs: [
+      { id: "3.1", name: "Deterministic" },
+      { id: "3.2", name: "PROS - Frequency Based" },
+      { id: "3.3", name: "PROS - Response Based" },
+      { id: "3.4", name: "LCS" },
+      { id: "3.5", name: "Random Tide Sampling" },
+      { id: "3.6", name: "Include RSLC" }
+    ]
+  },
+  {
+    id: "s4", name: "4. Hydraulic Responses", colorVar: "var(--tier-4-color)",
+    subs: [] // Dynamically generated based on Stage 1 structure selections
+  },
+  {
+    id: "s5", name: "5. Hazards & Uncertainty", colorVar: "var(--tier-5-color)",
+    subs: [
+      { id: "5.1", name: "JPM Analysis" },
+      { id: "5.2", name: "LCS Statistical Analysis" },
+      {
+        id: "5.3", name: "Pre-Processing",
+        subs: [
+          { id: "5.3.1", name: "Univariate: POT", dashed: true },
+          { id: "5.3.2", name: "Univariate: MLM Fit", dashed: true },
+          { id: "5.3.3", name: "Univariate: QQ Optimization", dashed: true },
+          { id: "5.3.4", name: "Univariate: Bootstrap", dashed: true },
+          { id: "5.3.5", name: "Univariate: PST", dashed: true },
+          { id: "5.3.6", name: "Multivariate: Correlation", dashed: true },
+          { id: "5.3.7", name: "Multivariate: Copula", dashed: true }
+        ]
+      },
+      { id: "5.4", name: "Storm Sampling Tool" },
+      { id: "5.5", name: "CIRP Integration" }
+    ]
+  },
+  {
+    id: "s6", name: "6. Outputs", colorVar: "var(--tier-6-color)",
+    subs: [
+      { id: "6.1", name: "Figures" },
+      { id: "6.2", name: "Tables" }
+    ]
   }
-  
-  saveWorkflowState(activeSelections);
-  renderCanvas();
+];
+
+const hydraulicResponsesByStructure = {
+  "1.1": [ // Levee
+    { id: "4.1.1", name: "Levee: Overtopping Rate" },
+    { id: "4.1.2", name: "Levee: Overtopping Volume", dashed: true },
+    { id: "4.1.3", name: "Levee: Runup" },
+    { id: "4.1.4", name: "Levee: Cumulative Excess Vol", dashed: true },
+    { id: "4.1.5", name: "Levee: Cumulative Excess Work", dashed: true }
+  ],
+  "1.2": [ // Floodwall
+    { id: "4.2.1", name: "Floodwall: Overtopping Rate" },
+    { id: "4.2.2", name: "Floodwall: Overtopping Vol" },
+    { id: "4.2.3", name: "Floodwall: Nappe Geometry" },
+    { id: "4.2.4", name: "Floodwall: Pressures & Forces" }
+  ],
+  "1.3": [ // Rubble Mound
+    { id: "4.3.1", name: "Rubble Mound: Seaside Stability" },
+    { id: "4.3.2", name: "Rubble Mound: Leeside Stability" },
+    { id: "4.3.3", name: "Rubble Mound: Wave Transmission" },
+    { id: "4.3.4", name: "Rubble Mound: Runup" },
+    { id: "4.3.5", name: "Rubble Mound: Overtopping Rate" },
+    { id: "4.3.6", name: "Rubble Mound: Overtopping Vol" }
+  ],
+  "1.4": [ // NNBF
+    { id: "4.4.1", name: "NNBF: Wave Attenuation", dashed: true }
+  ],
+  "1.5": [ // Hydrodynamic-Hazards Only
+    { id: "4.5.1", name: "Waves: Wind-Generated", dashed: true },
+    { id: "4.5.2", name: "Waves: Wave Transformation", dashed: true },
+    { id: "4.5.3", name: "Waves: Setup", dashed: true }
+  ]
+};
+
+let dragPayload = null;
+let canvasSequence = [];
+let violatingItemIds = new Set();
+const collapsedPaletteTiers = new Set();
+
+// Utility Functions
+function getFlatCanvasItems() {
+  return canvasSequence.flatMap(col => [...col.stochasticItems, ...col.hydraulicItems]);
 }
 
-function renderCanvas() {
-  const container = document.getElementById('canvasItems');
-  container.innerHTML = '';
+function getSelectedStructureIds() {
+  return getFlatCanvasItems().filter(item => item.id.startsWith("1.")).map(item => item.id);
+}
 
-  const grayedOutSet = calculateGrayedOutIds(activeSelections);
+function hasNonChsSelection() {
+  return getFlatCanvasItems().some(item => item.id.startsWith("2.2") || item.id.startsWith("2.3"));
+}
+
+function hasLcsSelection() {
+  return getFlatCanvasItems().some(item => item.id === "3.4");
+}
+
+let nonChsAutoCollapsed = false;
+
+function updateDynamicGatingAndCollapse() {
+  // Collapse Tiers 3 & 4 once when Non-CHS data is first selected
+  if (hasNonChsSelection()) {
+    if (!nonChsAutoCollapsed) {
+      collapsedPaletteTiers.add("s3");
+      collapsedPaletteTiers.add("s4");
+      nonChsAutoCollapsed = true;
+    }
+  } else {
+    nonChsAutoCollapsed = false;
+  }
+
+  // Handle Dynamic Hydraulic Options (Tier 4)
+  const selectedStructs = getSelectedStructureIds();
+  const tier4 = workflowData.find(tier => tier.id === "s4");
+  tier4.subs = [];
+  
+  if (selectedStructs.length === 0) {
+    tier4.subs.push({ id: "no_struct_notice", name: "Select Structure(s) in Stage 1 First", disabled: true });
+  } else {
+    selectedStructs.forEach(structId => {
+      const responses = hydraulicResponsesByStructure[structId] || [];
+      responses.forEach(resp => {
+        if (!tier4.subs.some(r => r.id === resp.id)) {
+          tier4.subs.push(resp);
+        }
+      });
+    });
+  }
+
+  // Handle LCS Statistical Analysis Gating
+  const lcsStatNode = workflowData.find(t => t.id === "s5").subs.find(sub => sub.id === "5.2");
+  if (lcsStatNode) {
+    lcsStatNode.disabled = !hasLcsSelection();
+  }
+}
+
+  // Handle Dynamic Hydraulic Options (Tier 4)
+  const selectedStructs = getSelectedStructureIds();
+  const tier4 = workflowData.find(tier => tier.id === "s4");
+  tier4.subs = [];
+  
+  if (selectedStructs.length === 0) {
+    tier4.subs.push({ id: "no_struct_notice", name: "Select Structure(s) in Stage 1 First", disabled: true });
+  } else {
+    selectedStructs.forEach(structId => {
+      const responses = hydraulicResponsesByStructure[structId] || [];
+      responses.forEach(resp => {
+        if (!tier4.subs.some(r => r.id === resp.id)) {
+          tier4.subs.push(resp);
+        }
+      });
+    });
+  }
+
+  // Handle LCS Statistical Analysis Gating
+  const lcsStatNode = workflowData.find(t => t.id === "s5").subs.find(sub => sub.id === "5.2");
+  if (lcsStatNode) {
+    lcsStatNode.disabled = !hasLcsSelection();
+  }
+}
+
+// Render Sidebar Palette
+function renderPalette() {
+  updateDynamicGatingAndCollapse();
+  const container = document.getElementById('palette-items');
+  container.innerHTML = '';
   
   workflowData.forEach(tier => {
-    const col = document.createElement('div');
-    col.className = 'tier-column';
-    
-    const title = document.createElement('h3');
-    title.innerText = tier.name;
-    col.appendChild(title);
-
-    tier.subs.forEach(item => {
-      const tile = document.createElement('div');
-      const isGrayed = grayedOutSet.has(item.id);
-      const isSelected = activeSelections.has(item.id);
-
-      let classList = ['item-tile'];
-      if (item.dashed) classList.push('dashed-border');
-      if (item.highlight) classList.push('highlighted-cell');
-      if (isSelected) classList.push('selected');
-      if (isGrayed) classList.push('grayed-out-cell');
-
-      tile.className = classList.join(' ');
-      tile.innerText = `${item.id} ${item.name}`;
-
-      if (!isGrayed) {
-        tile.style.backgroundColor = isSelected ? '#bbdefb' : tier.colorVar;
-      }
-
-      tile.onclick = () => toggleSelection(item.id, isGrayed);
-      col.appendChild(tile);
-    });
-
-    container.appendChild(col);
+    container.appendChild(createPaletteNode(tier, tier.colorVar));
   });
 }
 
-document.addEventListener("DOMContentLoaded", renderCanvas);
+function createPaletteNode(item, colorVar) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'palette-item-wrapper';
+
+  const box = document.createElement('div');
+  box.className = `box ${item.disabled ? 'grayed' : ''} ${item.dashed ? 'dashed-border' : ''}`;
+  box.style.backgroundColor = item.disabled ? 'var(--grayed-out)' : colorVar;
+  
+  const header = document.createElement('div');
+  header.className = 'palette-header';
+  
+  // const titleText = document.createElement('span');
+  // titleText.innerText = item.name;
+  // header.appendChild(titleText);
+
+  const hasSubs = item.subs && item.subs.length > 0;
+
+  if (hasSubs) {
+    const collapseBtn = document.createElement('button');
+    collapseBtn.className = 'collapse-btn';
+    collapseBtn.type = 'button';
+    const isCollapsed = collapsedPaletteTiers.has(item.id);
+    collapseBtn.innerText = isCollapsed ? '+' : '−';
+    
+    collapseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (collapsedPaletteTiers.has(item.id)) {
+      collapsedPaletteTiers.delete(item.id);
+    } else {
+      collapsedPaletteTiers.add(item.id);
+    }
+    renderPalette();
+  });
+    header.appendChild(collapseBtn);
+  }
+
+  box.appendChild(header);
+
+  if (!item.disabled) {
+    box.draggable = true;
+    box.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      dragPayload = { isNew: true, item: JSON.parse(JSON.stringify(item)) };
+      e.dataTransfer.setData("text/plain", item.id);
+    });
+    
+    // Quick-add to canvas on double click
+    box.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      addItemToCanvas(JSON.parse(JSON.stringify(item)), canvasSequence.length);
+    });
+  }
+
+  wrapper.appendChild(box);
+
+  if (hasSubs) {
+    const subContainer = document.createElement('div');
+    subContainer.className = 'sub-tree';
+    if (!collapsedPaletteTiers.has(item.id)) {
+      subContainer.classList.add('expanded');
+    }
+
+    item.subs.forEach(sub => {
+      sub.colorVar = colorVar;
+      subContainer.appendChild(createPaletteNode(sub, colorVar));
+    });
+    wrapper.appendChild(subContainer);
+  }
+
+  return wrapper;
+}
+
+// Render Canvas
+function renderCanvas() {
+  const canvas = document.getElementById('canvas');
+  canvas.innerHTML = '';
+
+  canvas.appendChild(createDropZone(0));
+
+  canvasSequence.forEach((colGroup, colIndex) => {
+    const columnEl = createCanvasColumn(colGroup, colIndex);
+    canvas.appendChild(columnEl);
+    canvas.appendChild(createDropZone(colIndex + 1));
+  });
+
+  validateRules();
+}
+
+function createDropZone(index) {
+  const zone = document.createElement('div');
+  zone.className = 'drop-zone';
+  zone.innerText = '→';
+  zone.title = "Drop to insert step here";
+
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.add('drag-over');
+  });
+
+  zone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.remove('drag-over');
+  });
+
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.remove('drag-over');
+    if (!dragPayload) return;
+
+    if (!dragPayload.isNew) {
+      removeCanvasItem(dragPayload.fromCol, dragPayload.section, dragPayload.fromIndex);
+    }
+
+    addItemToCanvas(dragPayload.item, index);
+    dragPayload = null;
+  });
+
+  return zone;
+}
+
+function addItemToCanvas(item, targetColIndex) {
+  const isTier4 = item.id.startsWith("4.");
+
+  if (targetColIndex >= canvasSequence.length) {
+    const newCol = { stochasticItems: [], hydraulicItems: [] };
+    if (isTier4) {
+      newCol.hydraulicItems.push(item);
+    } else {
+      newCol.stochasticItems.push(item);
+    }
+    canvasSequence.push(newCol);
+  } else {
+    if (isTier4) {
+      canvasSequence[targetColIndex].hydraulicItems.push(item);
+    } else {
+      canvasSequence[targetColIndex].stochasticItems.push(item);
+    }
+  }
+
+  renderPalette();
+  renderCanvas();
+}
+
+function createCanvasColumn(colGroup, colIndex) {
+  const columnBox = document.createElement('div');
+  columnBox.className = 'column-box';
+
+  const title = document.createElement('div');
+  title.className = 'column-title';
+  title.innerText = "Step " + (colIndex + 1);
+  columnBox.appendChild(title);
+
+  // Top Section: Stochastic Options / General Steps
+  const stochasticSection = document.createElement('div');
+  stochasticSection.className = 'stack-section';
+  colGroup.stochasticItems.forEach((item, idx) => {
+    stochasticSection.appendChild(createCanvasBox(item, colIndex, 'stochasticItems', idx));
+  });
+  columnBox.appendChild(stochasticSection);
+
+  // Bottom Section: Hydraulic Responses (Always forced directly underneath Tier 3)
+  if (colGroup.hydraulicItems.length > 0) {
+    const divider = document.createElement('div');
+    divider.className = 'stack-divider';
+    columnBox.appendChild(divider);
+
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.innerText = 'Hydraulic Calculations';
+    columnBox.appendChild(label);
+
+    const hydraulicSection = document.createElement('div');
+    hydraulicSection.className = 'stack-section';
+    colGroup.hydraulicItems.forEach((item, idx) => {
+      hydraulicSection.appendChild(createCanvasBox(item, colIndex, 'hydraulicItems', idx));
+    });
+    columnBox.appendChild(hydraulicSection);
+  }
+
+  // Column Drop Handling
+  columnBox.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+  columnBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragPayload) return;
+
+    if (!dragPayload.isNew) {
+      removeCanvasItem(dragPayload.fromCol, dragPayload.section, dragPayload.fromIndex);
+    }
+
+    if (dragPayload.item.id.startsWith("4.")) {
+      colGroup.hydraulicItems.push(dragPayload.item);
+    } else {
+      colGroup.stochasticItems.push(dragPayload.item);
+    }
+
+    dragPayload = null;
+    renderPalette();
+    renderCanvas();
+  });
+
+  return columnBox;
+}
+
+function createCanvasBox(item, colIndex, section, index) {
+  const box = document.createElement('div');
+  box.className = `box ${item.dashed ? 'dashed-border' : ''} ${violatingItemIds.has(item.id) ? 'violating' : ''}`;
+  box.style.backgroundColor = item.colorVar || 'var(--tier-1-color)';
+  box.innerText = item.name;
+
+  const deleteBtn = document.createElement('span');
+  deleteBtn.className = 'delete-btn';
+  deleteBtn.innerText = '✕';
+  deleteBtn.onclick = (e) => {
+    e.stopPropagation();
+    removeCanvasItem(colIndex, section, index);
+    renderPalette();
+    renderCanvas();
+  };
+  box.appendChild(deleteBtn);
+
+  box.draggable = true;
+  box.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    dragPayload = { isNew: false, fromCol: colIndex, section: section, fromIndex: index, item: item };
+    e.dataTransfer.setData("text/plain", item.id);
+  });
+
+  return box;
+}
+
+function removeCanvasItem(colIndex, section, index) {
+  if (canvasSequence[colIndex]) {
+    canvasSequence[colIndex][section].splice(index, 1);
+    if (canvasSequence[colIndex].stochasticItems.length === 0 && canvasSequence[colIndex].hydraulicItems.length === 0) {
+      canvasSequence.splice(colIndex, 1);
+    }
+  }
+}
+
+// Validation & Preset Management
+function validateRules() {
+  violatingItemIds.clear();
+  const warningEl = document.getElementById('inlineWarning');
+  const flatItems = getFlatCanvasItems();
+
+  const hasChs = flatItems.some(i => i.id === "2.1");
+  const hasJpm = flatItems.some(i => i.id === "5.1");
+  const hasLcs = flatItems.some(i => i.id === "3.4");
+  const hasLcsStat = flatItems.some(i => i.id === "5.2");
+
+  let warnings = [];
+
+  flatItems.forEach(item => {
+    if ((item.id === "3.1" || item.id === "3.2") && hasChs && !hasJpm) {
+      violatingItemIds.add(item.id);
+      warnings.push("CHS Deterministic/PROS-Frequency requires prior JPM Analysis.");
+    }
+    if (item.id === "5.2" && !hasLcs) {
+      violatingItemIds.add(item.id);
+      warnings.push("LCS Statistical Analysis requires LCS sampling in Tier 3.");
+    }
+  });
+
+  if (warnings.length > 0) {
+    warningEl.innerText = "⚠ Warning: " + warnings.join(" ");
+    warningEl.style.display = 'block';
+  } else {
+    warningEl.style.display = 'none';
+  }
+}
+
+function resetCanvas() {
+  canvasSequence = [];
+  collapsedPaletteTiers.clear();
+  renderPalette();
+  renderCanvas();
+}
+
+function loadPreset() {
+  const val = document.getElementById('presetSelect').value;
+  resetCanvas();
+  if (!val) return;
+
+  if (val === 'chs_levee') {
+    canvasSequence = [
+      { stochasticItems: [{ id: "1.1", name: "Levee", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "2.1", name: "2.1 CHS Data", colorVar: "var(--tier-2-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "5.1", name: "JPM Analysis", colorVar: "var(--tier-5-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "3.2", name: "PROS - Frequency Based", colorVar: "var(--tier-3-color)" }], 
+        hydraulicItems: [{ id: "4.1.1", name: "Levee: Overtopping Rate", colorVar: "var(--tier-4-color)" }] },
+      { stochasticItems: [{ id: "6.1", name: "Figures", colorVar: "var(--tier-6-color)" }], hydraulicItems: [] }
+    ];
+  } else if (val === 'non_chs_rubble') {
+    canvasSequence = [
+      { stochasticItems: [{ id: "1.3", name: "Rubble Mound", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "2.2.1", name: "CDIP", colorVar: "var(--tier-2-color)", dashed: true }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "5.3.1", name: "Univariate: POT", colorVar: "var(--tier-5-color)", dashed: true }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "3.3", name: "PROS - Response Based", colorVar: "var(--tier-3-color)" }], 
+        hydraulicItems: [{ id: "4.3.1", name: "Rubble Mound: Seaside Stability", colorVar: "var(--tier-4-color)" }] }
+    ];
+  } else if (val === 'lcs_hazard') {
+    canvasSequence = [
+      { stochasticItems: [{ id: "1.5", name: "Hydrodynamic-Hazards Only", colorVar: "var(--tier-1-color)" }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "2.3.1", name: "NOAA", colorVar: "var(--tier-2-color)", dashed: true }], hydraulicItems: [] },
+      { stochasticItems: [{ id: "3.4", name: "LCS", colorVar: "var(--tier-3-color)" }], 
+        hydraulicItems: [{ id: "4.5.3", name: "Waves: Setup", colorVar: "var(--tier-4-color)", dashed: true }] },
+      { stochasticItems: [{ id: "5.2", name: "LCS Statistical Analysis", colorVar: "var(--tier-5-color)" }], hydraulicItems: [] }
+    ];
+  }
+
+  renderPalette();
+  renderCanvas();
+}
+
+// Initialize on Load
+renderPalette();
+renderCanvas();
 </script>
 </body>
 </html>

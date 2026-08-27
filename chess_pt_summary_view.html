@@ -9,7 +9,7 @@
       --tier-2-color: #e0f2f1;
       --tier-3-color: #fff3e0;
       --tier-4-color: #f3e5f5;
-      --tier-5-color: #f3e5f5;
+      --tier-5-color: #ede7f6;
       --tier-6-color: #e8f5e9;
     }
     body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
@@ -18,17 +18,15 @@
     .btn { padding: 8px 16px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .btn:hover { background-color: #5a6268; }
 
-    /* Warnings and Error Notification Styling */
+    /* Alert Box Styles */
     .alert-container { margin: 15px 0; }
     .alert-box { padding: 10px 15px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em; }
     .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
 
-    /* Summary Grid Structure */
+    /* Grid & Tile Layout */
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-top: 20px; }
     .summary-tier-group { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; }
-    
-    /* Summary Tile Classes */
     .summary-tile {
       padding: 10px; margin: 6px 0; border: 1px solid #ccc; border-radius: 4px;
       font-size: 0.9em; cursor: pointer; transition: transform 0.1s ease;
@@ -48,7 +46,7 @@
 
 <p><small>View all available steps and data types. Color-coded by Tier. Black dashed outlines indicate specific data. Click colored cells to navigate to their associated Coastal Wiki pages.</small></p>
 
-<!-- Dynamic Validation Messages Container -->
+<!-- Dynamic Validation Status Messages -->
 <div id="statusAlertContainer" class="alert-container"></div>
 
 <div class="summary-grid" id="summaryItems"></div>

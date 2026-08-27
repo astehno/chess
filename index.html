@@ -436,10 +436,10 @@ const wrapper = document.createElement('div');
     box.addEventListener('dragstart', (e) => {
       e.stopPropagation();
       dragPayload = { isNew: true, item: JSON.parse(JSON.stringify(item)) };
-      e.dataTransfer.setData("text/plain", item.id);
+      e.dataTransfer.effectAllowed = 'copyMove';
+      e.dataTransfer.setData("text/plain", item.id || "paletteItem");
     });
     
-    // Quick-add to canvas on double click
     box.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       addItemToCanvas(JSON.parse(JSON.stringify(item)), canvasSequence.length);
@@ -534,6 +534,7 @@ function createDropZone(index) {
   zone.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
     zone.classList.add('drag-over');
   });
 
@@ -599,7 +600,11 @@ function createCanvasColumn(colGroup, colIndex) {
   }
 
   // Column Drop Handling
-  columnBox.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+  columnBox.addEventListener('dragover', (e) => { 
+    e.preventDefault(); 
+    e.stopPropagation(); 
+    e.dataTransfer.dropEffect = 'move';
+  });
   columnBox.addEventListener('drop', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -722,7 +727,19 @@ function loadPreset() {
   renderPalette();
   renderCanvas();
 }
+const canvasEl = document.getElementById('canvas');
+canvasEl.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+});
 
+canvasEl.addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (dragPayload && dragPayload.isNew) {
+    addItemToCanvas(dragPayload.item, canvasSequence.length);
+    dragPayload = null;
+  }
+});
 // Initialize on Load
 renderPalette();
 renderCanvas();

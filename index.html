@@ -300,7 +300,7 @@
 const hydraulicResponsesByStructure = window.hydraulicResponsesByStructure || {
   "1.1": [
     { id: "4.1.1", name: "Levee: Overtopping Rate", colorVar: "var(--tier-4-color)" },
-    { id: "4.1.2", name: "Levee: Overtopping Vol", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.1.2", name: "Levee: Overtopping Vol", colorVar: "var(--tier-4-color)"},
     { id: "4.1.3", name: "Levee: Runup", colorVar: "var(--tier-4-color)" },
     { id: "4.1.4", name: "Levee: Cumulative Excess Vol", colorVar: "var(--tier-4-color)", dashed: true },
     { id: "4.1.5", name: "Levee: Cumulative Excess Work", colorVar: "var(--tier-4-color)", dashed: true }
@@ -317,15 +317,31 @@ const hydraulicResponsesByStructure = window.hydraulicResponsesByStructure || {
     { id: "4.3.3", name: "Rubble Mound: Wave Transmission", colorVar: "var(--tier-4-color)" },
     { id: "4.3.4", name: "Rubble Mound: Runup", colorVar: "var(--tier-4-color)" },
     { id: "4.3.5", name: "Rubble Mound: Overtopping Rate", colorVar: "var(--tier-4-color)" },
-    { id: "4.3.6", name: "Rubble Mound: Overtopping Vol", colorVar: "var(--tier-4-color)" }
+    { id: "4.3.6", name: "Rubble Mound: Overtopping Vol", colorVar: "var(--tier-4-color)" },
+    { id: "4.3.7", name: "Rubble Mound: Toe Protection Design", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.3.7", name: "Rubble Mound: Revetment Design", colorVar: "var(--tier-4-color)", dashed: true }
   ],
   "1.4": [
-    { id: "4.4.1", name: "NNBF: Wave Attenuation", colorVar: "var(--tier-4-color)", dashed: true }
+    { id: "4.4.1", name: "NNBF: Wave Attenuation", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.4.2", name: "NNBF: Wave Transmission", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.4.2", name: "NNBF: Veg Growth/Decay", colorVar: "var(--tier-4-color)", dashed: true }
   ],
   "1.5": [
     { id: "4.5.1", name: "Waves: Wind-Generated", colorVar: "var(--tier-4-color)", dashed: true },
     { id: "4.5.2", name: "Waves: Wave Transformation", colorVar: "var(--tier-4-color)", dashed: true },
-    { id: "4.5.3", name: "Waves: Setup", colorVar: "var(--tier-4-color)", dashed: true }
+    { id: "4.5.3", name: "Waves: Linear Wave Theory", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.5.4", name: "Waves: Cnoidal Wave Theory", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.5.5", name: "Waves: Fourier Series Wave Theory", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.5.6", name: "Waves: Stochastic Peak Value Sampler", colorVar: "var(--tier-4-color)", dashed: true }
+  ],
+  "1.6":[
+    { id: "4.6.1", name: "Beaches: Setup", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.6.2", name: "Beaches: Irregular Wave Runup", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.6.3", name: "Beaches: Longshore Sediment Transport", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.6.4", name: "Beaches: Time-Dependent Beach and Dune Erosion", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.6.5", name: "Beaches: Nourishment Overfill Ratio and Volume", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.6.6", name: "Beaches: Composite Grain-Size Distribution", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.6.7", name: "Beaches: Longshore Transport using CEDRS Stats", colorVar: "var(--tier-4-color)", dashed: true }
   ]
 };
 

@@ -1,9 +1,8 @@
 // chess_pt_core.js
-// Single Source of Truth for Schema, Dependencies, Validation, and Storage
+// Single Source of Truth for Schema, Pre-Made Workflows, Dependencies, Validation, and Storage
 
 // ============================================================================
 // 1. WORKFLOW DATA SCHEMA
-// Flat structure with visual flags (dashed, highlight) and color definitions.
 // ============================================================================
 const CHESS_WORKFLOW_SCHEMA = [
   {
@@ -20,7 +19,6 @@ const CHESS_WORKFLOW_SCHEMA = [
     id: "s2", name: "2. Hydrodynamic Forcing", colorVar: "var(--tier-2-color, #e0f2f1)",
     subs: [
       { id: "2.1", name: "CHS Data" },
-      // EDIT HERE: Set 'dashed: true' to draw a black dashed outline on the cell
       { id: "2.2.1", name: "Waves: CDIP", dashed: true },
       { id: "2.2.2", name: "Waves: WIS", dashed: true },
       { id: "2.2.3", name: "Waves: MOPS", dashed: true },
@@ -71,14 +69,13 @@ const CHESS_WORKFLOW_SCHEMA = [
       { id: "5.1", name: "JPM Analysis" },
       { id: "5.2", name: "LCS Statistical Analysis" },
       { id: "5.3", name: "Pre-Preprocessing" },
-      // Tier 5 items flattened to remove nested sub-objects
-      { id: "5.3.1", name: "Univariate: POT", parentGroup: "5.3", dashed: true },
-      { id: "5.3.2", name: "Univariate: MLM Fit", parentGroup: "5.3", dashed: true },
-      { id: "5.3.3", name: "Univariate: QQ Optimization", parentGroup: "5.3", dashed: true },
-      { id: "5.3.4", name: "Univariate: Bootstrap", parentGroup: "5.3", dashed: true },
-      { id: "5.3.5", name: "Univariate: PST", parentGroup: "5.3", dashed: true },
-      { id: "5.3.6", name: "Multivariate: Correlation", parentGroup: "5.3", dashed: true },
-      { id: "5.3.7", name: "Multivariate: Copula", parentGroup: "5.3", dashed: true },
+      { id: "5.3.1", name: "Univariate: POT", dashed: true },
+      { id: "5.3.2", name: "Univariate: MLM Fit", dashed: true },
+      { id: "5.3.3", name: "Univariate: QQ Optimization", dashed: true },
+      { id: "5.3.4", name: "Univariate: Bootstrap", dashed: true },
+      { id: "5.3.5", name: "Univariate: PST", dashed: true },
+      { id: "5.3.6", name: "Multivariate: Correlation", dashed: true },
+      { id: "5.3.7", name: "Multivariate: Copula", dashed: true },
       { id: "5.4", name: "Storm Sampling Tool" },
       { id: "5.5", name: "CIRP Integration" }
     ]
@@ -104,33 +101,36 @@ const CHESS_WIKI_MAP = {
 };
 
 // ============================================================================
-// 2. DEPENDENCY ENGINE (GRAY-OUT RULES)
-// EDIT HERE: Map selection IDs to an array of IDs they automatically GRAY OUT.
+// 2. PRE-MADE WORKFLOW TEMPLATES
 // ============================================================================
-const CHESS_GRAYOUT_RULES = {
-  // If "1.5 Hydrodynamic-Hazards Only" is active, gray out structural response choices
-  "1.5": [
-    "4.1.1", "4.1.2", "4.1.3", "4.1.4", "4.1.5",
-    "4.2.1", "4.2.2", "4.2.3", "4.2.4",
-    "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6",
-    "4.4.1"
-  ],
-  // Selecting "1.1 Levee" grays out Floodwall and Rubble Mound responses
-  "1.1": [
-    "4.2.1", "4.2.2", "4.2.3", "4.2.4",
-    "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6"
-  ],
-  // Selecting "1.2 Floodwall" grays out Levee and Rubble Mound responses
-  "1.2": [
-    "4.1.1", "4.1.2", "4.1.3", "4.1.4", "4.1.5",
-    "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6"
-  ]
+const PREMADE_WORKFLOWS = {
+  "standard_levee": {
+    name: "Standard Levee Risk Assessment",
+    items: ["1.1", "2.1", "3.2", "4.1.1", "4.1.4", "5.1", "6.1", "6.2"]
+  },
+  "floodwall_deterministic": {
+    name: "Floodwall Deterministic Design",
+    items: ["1.2", "2.4", "3.1", "4.2.1", "4.2.4", "6.1"]
+  },
+  "rubble_mound_wave": {
+    name: "Rubble Mound Wave Transmission Study",
+    items: ["1.3", "2.2.1", "2.3.1", "3.3", "4.3.3", "4.3.5", "5.2", "6.1"]
+  },
+  "hydro_hazards": {
+    name: "Hydrodynamic Hazards Only",
+    items: ["1.5", "2.1", "3.2", "5.1", "5.4", "6.1", "6.2"]
+  }
 };
 
 // ============================================================================
-// 3. VALIDATION ENGINE (ERRORS & WARNINGS)
-// EDIT HERE: Customize error and warning conditions dynamically.
+// 3. DEPENDENCY & VALIDATION RULES
 // ============================================================================
+const CHESS_GRAYOUT_RULES = {
+  "1.5": ["4.1.1", "4.1.2", "4.1.3", "4.1.4", "4.1.5", "4.2.1", "4.2.2", "4.2.3", "4.2.4", "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6", "4.4.1"],
+  "1.1": ["4.2.1", "4.2.2", "4.2.3", "4.2.4", "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6"],
+  "1.2": ["4.1.1", "4.1.2", "4.1.3", "4.1.4", "4.1.5", "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6"]
+};
+
 const CHESS_VALIDATION_RULES = [
   {
     id: "ERR_NO_STRUCTURE",
@@ -148,15 +148,13 @@ const CHESS_VALIDATION_RULES = [
     id: "WARN_DISABLED_SELECTION",
     type: "warning",
     check: (selections, grayedOutSet) => Array.from(selections).some(id => grayedOutSet.has(id)),
-    message: "Your active canvas contains items that are currently disabled/grayed out by higher-tier selection rules."
+    message: "Your active canvas contains items disabled by higher-tier selection rules."
   }
 ];
 
 // ============================================================================
 // 4. COMPUTATION & PERSISTENCE HELPERS
 // ============================================================================
-
-// Efficient O(1) flattened lookup map generator
 function buildItemLookupMap() {
   const map = new Map();
   CHESS_WORKFLOW_SCHEMA.forEach(tier => {
@@ -169,7 +167,6 @@ function buildItemLookupMap() {
 
 const CHESS_ITEM_MAP = buildItemLookupMap();
 
-// Dynamic computation of grayed-out items
 function calculateGrayedOutIds(selectedIds) {
   const grayed = new Set();
   selectedIds.forEach(id => {
@@ -179,21 +176,17 @@ function calculateGrayedOutIds(selectedIds) {
   return grayed;
 }
 
-// Validation evaluation
 function evaluateWorkflowStatus(selectedIds) {
   const grayedOutSet = calculateGrayedOutIds(selectedIds);
   const results = [];
-
   CHESS_VALIDATION_RULES.forEach(rule => {
     if (rule.check(selectedIds, grayedOutSet)) {
       results.push({ id: rule.id, type: rule.type, message: rule.message });
     }
   });
-
   return results;
 }
 
-// Storage operations
 function saveWorkflowState(selectedIds) {
   localStorage.setItem("chess_active_selections", JSON.stringify(Array.from(selectedIds)));
 }

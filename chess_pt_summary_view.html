@@ -124,37 +124,45 @@
 
 <div id="statusAlertContainer" class="alert-container"></div>
 <div class="summary-grid" id="summaryItems"></div>
-
+<div class="summary-container" id="summary-content"></div>
+  
 <script src="chess_pt_config.js"></script>
 <script>
 function renderSummaryView() {
-  const container = document.getElementById('summary-content');
+const container = document.getElementById('summary-content') || document.getElementById('summaryContent');
   if (!container) return;
 
   // Retrieve canvas workflow sequence from local storage
-  const sequence = (typeof loadWorkflowSequence === 'function') ? loadWorkflowSequence() : [];
-  const flatItems = sequence.flatMap(col => [...col.stochasticItems, ...col.hydraulicItems]);
+const sequence = (typeof loadWorkflowSequence === 'function') 
+    ? loadWorkflowSequence() 
+    : JSON.parse(localStorage.getItem('chess_pt_workflow_sequence') || '[]');
+
+  // Flatten BOTH stochasticItems and hydraulicItems arrays across all columns
+  const flatItems = sequence.flatMap(col => [
+    ...(col.stochasticItems || []), 
+    ...(col.hydraulicItems || [])
+  ]);
 
   if (flatItems.length === 0) {
-    container.innerHTML = '<div style="padding: 20px; color: #64748b; font-weight: bold;">No workflow items found on canvas. Return to builder to add steps.</div>';
+    container.innerHTML = '<div style="padding: 20px; color: #64748b; font-weight: bold; text-align: center;">No workflow items found on canvas. Return to builder to add steps.</div>';
     return;
   }
 
   // Tier definitions matching system categories
   const tiers = [
-    { label: "Tier 1: Asset / Structure Selection", prefix: "1." },
-    { label: "Tier 2: Hydro-Data Pre-Processing", prefix: "2." },
-    { label: "Tier 3: PROS & LCS Sampling Strategy", prefix: "3." },
-    { label: "Tier 4: Hydraulic Responses", prefix: "4." },
-    { label: "Tier 5: Multivariate & Statistical Analysis", prefix: "5." },
-    { label: "Tier 6: Visualization & Export", prefix: "6." }
+    { label: "1: Structure Selection", prefix: "1." },
+    { label: "2: Hydrodynamic Forcing", prefix: "2." },
+    { label: "3: Probabilistic", prefix: "3." },
+    { label: "4: Hydraulic Responses", prefix: "4." },
+    { label: "5: Hazards & Uncertainty", prefix: "5." },
+    { label: "6: Outputs", prefix: "6." }
   ];
 
   container.innerHTML = '';
 
-  tiers.forEach(tier => {
-    // Collect items assigned to this tier
-    const matchingItems = flatItems.filter(item => item.id.startsWith(tier.prefix));
+tiers.forEach(tier => {
+    // Collect all items starting with this tier's prefix
+    const matchingItems = flatItems.filter(item => item.id && item.id.startsWith(tier.prefix));
 
     if (matchingItems.length > 0) {
       const card = document.createElement('div');

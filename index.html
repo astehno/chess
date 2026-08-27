@@ -318,9 +318,6 @@ function navigateToSummary() {
   
  
 
-let violatingItemIds = new Set();
-const collapsedPaletteTiers = new Set();
-
 // Utility Functions
 function getFlatCanvasItems() {
   return canvasSequence.flatMap(col => [...col.stochasticItems, ...col.hydraulicItems]);

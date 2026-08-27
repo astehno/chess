@@ -655,28 +655,7 @@ function createDropZone(index) {
   return zone;
 }
 
-function addItemToCanvas(item, targetColIndex) {
-  const isTier4 = item.id.startsWith("4.");
 
-  if (targetColIndex >= canvasSequence.length) {
-    const newCol = { stochasticItems: [], hydraulicItems: [] };
-    if (isTier4) {
-      newCol.hydraulicItems.push(item);
-    } else {
-      newCol.stochasticItems.push(item);
-    }
-    canvasSequence.push(newCol);
-  } else {
-    if (isTier4) {
-      canvasSequence[targetColIndex].hydraulicItems.push(item);
-    } else {
-      canvasSequence[targetColIndex].stochasticItems.push(item);
-    }
-  }
-
-  renderPalette();
-  renderCanvas();
-}
 
 function createCanvasColumn(colGroup, colIndex) {
   const columnBox = document.createElement('div');
@@ -766,14 +745,6 @@ function createCanvasBox(item, colIndex, section, index) {
   return box;
 }
 
-function removeCanvasItem(colIndex, section, index) {
-  if (canvasSequence[colIndex]) {
-    canvasSequence[colIndex][section].splice(index, 1);
-    if (canvasSequence[colIndex].stochasticItems.length === 0 && canvasSequence[colIndex].hydraulicItems.length === 0) {
-      canvasSequence.splice(colIndex, 1);
-    }
-  }
-}
 
 // Validation & Preset Management
 function validateRules() {
@@ -807,12 +778,6 @@ function validateRules() {
   }
 }
 
-function resetCanvas() {
-  canvasSequence = [];
-  collapsedPaletteTiers.clear();
-  renderPalette();
-  renderCanvas();
-}
 
 function loadPreset() {
   const val = document.getElementById('presetSelect').value;

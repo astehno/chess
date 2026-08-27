@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <title>Modular Coastal Workflow Builder</title>
   <style>
-:root {
-      --tier-1-color: #0EA5E9; /* Cyan / Bright Sky (Structures - High contrast against dark canvas) */
-      --tier-2-color: #2563EB; /* Deep Blue (Hydrodynamics) */
-      --tier-3-color: #D97706; /* Amber Gold (Probabilistic Sampling) */
-      --tier-4-color: #7C3AED; /* Purple / Violet (Hydraulic Responses) */
-      --tier-5-color: #C2410C; /* Terracotta / Coral Rose (Hazards & Uncertainty - Replaces Red) */
-      --tier-6-color: #059669; /* Emerald Green (Outputs & Reports) */
+    :root {
+      --tier-1-color: #0EA5E9; /* Cyan / Bright Sky */
+      --tier-2-color: #2563EB; /* Deep Blue */
+      --tier-3-color: #D97706; /* Amber Gold */
+      --tier-4-color: #7C3AED; /* Purple / Violet */
+      --tier-5-color: #C2410C; /* Terracotta / Coral Rose */
+      --tier-6-color: #059669; /* Emerald Green */
       --grayed-out: #94A3B8;   /* Slate Gray */
     }
 
@@ -120,7 +120,7 @@
       gap: 8px;
       padding: 10px;
       border-radius: 8px;
-      background: #1E293B; /* Slate Navy - Contrasts clearly with all Tier colors */
+      background: #1E293B;
       min-width: 190px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.15);
       position: relative;
@@ -266,8 +266,6 @@
 </head>
 <body>
 
-<!-- UPDATE 5: Update top-controls header bar to add navigation to Summary & Wiki view -->
-
 <div class="top-controls">
   <span class="logo-header">CHESS-PT</span>
   <label for="presetSelect">Demonstration Preset:</label>
@@ -278,7 +276,7 @@
     <option value="lcs_hazard">LCS Hydro-Hazard Workflow</option>
   </select>
   <button class="btn" onclick="loadPreset()">Load Preset</button>
-  <button class="btn" onclick="navigateToSummary()">Summary & Wiki</button> <!-- ADD THIS -->
+  <button class="btn" onclick="navigateToSummary()">Summary & Wiki</button>
   <button class="btn btn-danger" onclick="resetCanvas()">Reset Canvas</button>
 </div>
 
@@ -295,15 +293,48 @@
   </div>
 </div>
 
-  <script src="chess_pt_config.js"></script>
+<script src="chess_pt_config.js"></script>
 
-  <script>
-// Dashboard & Schema Definition
+<script>
+// Hydraulic Responses Lookup Map (Fallback if not provided in config)
+const hydraulicResponsesByStructure = window.hydraulicResponsesByStructure || {
+  "1.1": [
+    { id: "4.1.1", name: "Levee: Overtopping Rate", colorVar: "var(--tier-4-color)" },
+    { id: "4.1.2", name: "Levee: Overtopping Vol", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.1.3", name: "Levee: Runup", colorVar: "var(--tier-4-color)" },
+    { id: "4.1.4", name: "Levee: Cumulative Excess Vol", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.1.5", name: "Levee: Cumulative Excess Work", colorVar: "var(--tier-4-color)", dashed: true }
+  ],
+  "1.2": [
+    { id: "4.2.1", name: "Floodwall: Overtopping Rate", colorVar: "var(--tier-4-color)" },
+    { id: "4.2.2", name: "Floodwall: Overtopping Vol", colorVar: "var(--tier-4-color)" },
+    { id: "4.2.3", name: "Floodwall: Nappe Geometry", colorVar: "var(--tier-4-color)" },
+    { id: "4.2.4", name: "Floodwall: Pressures & Forces", colorVar: "var(--tier-4-color)" }
+  ],
+  "1.3": [
+    { id: "4.3.1", name: "Rubble Mound: Seaside Stability", colorVar: "var(--tier-4-color)" },
+    { id: "4.3.2", name: "Rubble Mound: Leeside Stability", colorVar: "var(--tier-4-color)" },
+    { id: "4.3.3", name: "Rubble Mound: Wave Transmission", colorVar: "var(--tier-4-color)" },
+    { id: "4.3.4", name: "Rubble Mound: Runup", colorVar: "var(--tier-4-color)" },
+    { id: "4.3.5", name: "Rubble Mound: Overtopping Rate", colorVar: "var(--tier-4-color)" },
+    { id: "4.3.6", name: "Rubble Mound: Overtopping Vol", colorVar: "var(--tier-4-color)" }
+  ],
+  "1.4": [
+    { id: "4.4.1", name: "NNBF: Wave Attenuation", colorVar: "var(--tier-4-color)", dashed: true }
+  ],
+  "1.5": [
+    { id: "4.5.1", name: "Waves: Wind-Generated", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.5.2", name: "Waves: Wave Transformation", colorVar: "var(--tier-4-color)", dashed: true },
+    { id: "4.5.3", name: "Waves: Setup", colorVar: "var(--tier-4-color)", dashed: true }
+  ]
+};
+
+// Dashboard & Schema State
 let canvasSequence = (typeof loadWorkflowSequence === 'function') ? loadWorkflowSequence() : [];
 let dragPayload = null;
 let violatingItemIds = new Set();
 const collapsedPaletteTiers = new Set();
-
+let nonChsAutoCollapsed = false;
 
 function saveState() {
   if (typeof saveWorkflowSequence === 'function') {
@@ -315,8 +346,6 @@ function navigateToSummary() {
   saveState();
   window.location.href = "chess_pt_summary_view.html";
 }
-  
- 
 
 // Utility Functions
 function getFlatCanvasItems() {
@@ -335,15 +364,7 @@ function hasLcsSelection() {
   return getFlatCanvasItems().some(item => item.id === "3.4");
 }
 
-let nonChsAutoCollapsed = false;
-function navigateToSummary() {
-  if (typeof saveWorkflowSequence === 'function') {
-    saveWorkflowSequence(canvasSequence);
-  }
-  window.location.href = "chess_pt_summary_view.html";
-}
 function updateDynamicGatingAndCollapse() {
-  // Collapse Tiers 3 & 4 once when Non-CHS data is first selected
   if (hasNonChsSelection()) {
     if (!nonChsAutoCollapsed) {
       collapsedPaletteTiers.add("s3");
@@ -354,36 +375,38 @@ function updateDynamicGatingAndCollapse() {
     nonChsAutoCollapsed = false;
   }
 
-  // Handle Dynamic Hydraulic Options (Tier 4)
   const selectedStructs = getSelectedStructureIds();
   const tier4 = workflowData.find(tier => tier.id === "s4");
-  tier4.subs = [];
-  
-  if (selectedStructs.length === 0) {
-    tier4.subs.push({ id: "no_struct_notice", name: "Select Structure(s) in Stage 1 First", disabled: true });
-  } else {
-    selectedStructs.forEach(structId => {
-      const responses = hydraulicResponsesByStructure[structId] || [];
-      responses.forEach(resp => {
-        if (!tier4.subs.some(r => r.id === resp.id)) {
-          tier4.subs.push(resp);
-        }
+  if (tier4) {
+    tier4.subs = [];
+    if (selectedStructs.length === 0) {
+      tier4.subs.push({ id: "no_struct_notice", name: "Select Structure(s) in Stage 1 First", disabled: true });
+    } else {
+      selectedStructs.forEach(structId => {
+        const responses = hydraulicResponsesByStructure[structId] || [];
+        responses.forEach(resp => {
+          if (!tier4.subs.some(r => r.id === resp.id)) {
+            tier4.subs.push(resp);
+          }
+        });
       });
-    });
+    }
   }
 
-  // Handle LCS Statistical Analysis Gating
-  const lcsStatNode = workflowData.find(t => t.id === "s5").subs.find(sub => sub.id === "5.2");
-  if (lcsStatNode) {
-    lcsStatNode.disabled = !hasLcsSelection();
+  const tier5 = workflowData.find(t => t.id === "s5");
+  if (tier5 && tier5.subs) {
+    const lcsStatNode = tier5.subs.find(sub => sub.id === "5.2");
+    if (lcsStatNode) {
+      lcsStatNode.disabled = !hasLcsSelection();
+    }
   }
 }
 
-  
 // Render Sidebar Palette
 function renderPalette() {
   updateDynamicGatingAndCollapse();
   const container = document.getElementById('palette-items');
+  if (!container) return;
   container.innerHTML = '';
   
   workflowData.forEach(tier => {
@@ -392,7 +415,7 @@ function renderPalette() {
 }
 
 function createPaletteNode(item, colorVar) {
-const wrapper = document.createElement('div');
+  const wrapper = document.createElement('div');
   wrapper.className = 'palette-item-wrapper';
 
   const box = document.createElement('div');
@@ -402,7 +425,6 @@ const wrapper = document.createElement('div');
   const header = document.createElement('div');
   header.className = 'palette-header';
   
-  // UNCOMMENT / ADD THIS BLOCK TO DISPLAY ITEM NAMES IN SIDEBAR:
   const titleText = document.createElement('span');
   titleText.innerText = item.name;
   header.appendChild(titleText);
@@ -417,15 +439,15 @@ const wrapper = document.createElement('div');
     collapseBtn.innerText = isCollapsed ? '+' : '−';
     
     collapseBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (collapsedPaletteTiers.has(item.id)) {
-      collapsedPaletteTiers.delete(item.id);
-    } else {
-      collapsedPaletteTiers.add(item.id);
-    }
-    renderPalette();
-  });
+      e.stopPropagation();
+      e.preventDefault();
+      if (collapsedPaletteTiers.has(item.id)) {
+        collapsedPaletteTiers.delete(item.id);
+      } else {
+        collapsedPaletteTiers.add(item.id);
+      }
+      renderPalette();
+    });
     header.appendChild(collapseBtn);
   }
 
@@ -468,6 +490,7 @@ const wrapper = document.createElement('div');
 // Render Canvas
 function renderCanvas() {
   const canvas = document.getElementById('canvas');
+  if (!canvas) return;
   canvas.innerHTML = '';
 
   canvas.appendChild(createDropZone(0));
@@ -480,8 +503,6 @@ function renderCanvas() {
 
   validateRules();
 }
-
-// UPDATE 4: Update addItemToCanvas(), removeCanvasItem(), and resetCanvas() to save state automatically
 
 function addItemToCanvas(item, targetColIndex) {
   const isTier4 = item.id.startsWith("4.");
@@ -502,7 +523,7 @@ function addItemToCanvas(item, targetColIndex) {
     }
   }
 
-  saveState(); // <-- ADD THIS
+  saveState();
   renderPalette();
   renderCanvas();
 }
@@ -514,13 +535,15 @@ function removeCanvasItem(colIndex, section, index) {
       canvasSequence.splice(colIndex, 1);
     }
   }
-  saveState(); // <-- ADD THIS
+  saveState();
+  renderPalette();
+  renderCanvas();
 }
 
 function resetCanvas() {
   canvasSequence = [];
   collapsedPaletteTiers.clear();
-  saveState(); // <-- ADD THIS
+  saveState();
   renderPalette();
   renderCanvas();
 }
@@ -561,8 +584,6 @@ function createDropZone(index) {
   return zone;
 }
 
-
-
 function createCanvasColumn(colGroup, colIndex) {
   const columnBox = document.createElement('div');
   columnBox.className = 'column-box';
@@ -572,7 +593,6 @@ function createCanvasColumn(colGroup, colIndex) {
   title.innerText = "Step " + (colIndex + 1);
   columnBox.appendChild(title);
 
-  // Top Section: Stochastic Options / General Steps
   const stochasticSection = document.createElement('div');
   stochasticSection.className = 'stack-section';
   colGroup.stochasticItems.forEach((item, idx) => {
@@ -580,7 +600,6 @@ function createCanvasColumn(colGroup, colIndex) {
   });
   columnBox.appendChild(stochasticSection);
 
-  // Bottom Section: Hydraulic Responses (Always forced directly underneath Tier 3)
   if (colGroup.hydraulicItems.length > 0) {
     const divider = document.createElement('div');
     divider.className = 'stack-divider';
@@ -599,12 +618,12 @@ function createCanvasColumn(colGroup, colIndex) {
     columnBox.appendChild(hydraulicSection);
   }
 
-  // Column Drop Handling
   columnBox.addEventListener('dragover', (e) => { 
     e.preventDefault(); 
     e.stopPropagation(); 
     e.dataTransfer.dropEffect = 'move';
   });
+  
   columnBox.addEventListener('drop', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -621,6 +640,7 @@ function createCanvasColumn(colGroup, colIndex) {
     }
 
     dragPayload = null;
+    saveState();
     renderPalette();
     renderCanvas();
   });
@@ -640,8 +660,6 @@ function createCanvasBox(item, colIndex, section, index) {
   deleteBtn.onclick = (e) => {
     e.stopPropagation();
     removeCanvasItem(colIndex, section, index);
-    renderPalette();
-    renderCanvas();
   };
   box.appendChild(deleteBtn);
 
@@ -655,17 +673,15 @@ function createCanvasBox(item, colIndex, section, index) {
   return box;
 }
 
-
-// Validation & Preset Management
 function validateRules() {
   violatingItemIds.clear();
   const warningEl = document.getElementById('inlineWarning');
+  if (!warningEl) return;
   const flatItems = getFlatCanvasItems();
 
   const hasChs = flatItems.some(i => i.id === "2.1");
   const hasJpm = flatItems.some(i => i.id === "5.1");
   const hasLcs = flatItems.some(i => i.id === "3.4");
-  const hasLcsStat = flatItems.some(i => i.id === "5.2");
 
   let warnings = [];
 
@@ -687,9 +703,6 @@ function validateRules() {
     warningEl.style.display = 'none';
   }
 }
-
-
-// UPDATE 2: Update loadPreset() to call saveWorkflowSequence() and use window.workflowData
 
 function loadPreset() {
   const val = document.getElementById('presetSelect').value;
@@ -723,26 +736,32 @@ function loadPreset() {
     ];
   }
 
-  saveWorkflowSequence(canvasSequence);
+  saveState();
   renderPalette();
   renderCanvas();
 }
-const canvasEl = document.getElementById('canvas');
-canvasEl.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'copy';
-});
 
-canvasEl.addEventListener('drop', (e) => {
-  e.preventDefault();
-  if (dragPayload && dragPayload.isNew) {
-    addItemToCanvas(dragPayload.item, canvasSequence.length);
-    dragPayload = null;
+// Bind Canvas General Drag/Drop and Initialize
+window.addEventListener('DOMContentLoaded', () => {
+  const canvasEl = document.getElementById('canvas');
+  if (canvasEl) {
+    canvasEl.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+
+    canvasEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (dragPayload && dragPayload.isNew) {
+        addItemToCanvas(dragPayload.item, canvasSequence.length);
+        dragPayload = null;
+      }
+    });
   }
+
+  renderPalette();
+  renderCanvas();
 });
-// Initialize on Load
-renderPalette();
-renderCanvas();
 </script>
 </body>
 </html>

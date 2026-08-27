@@ -359,7 +359,11 @@ function saveState() {
     saveWorkflowSequence(canvasSequence);
   }
 }
-
+function navigateToSummary() {
+  saveState();
+  window.location.href = "chess_pt_summary_view.html";
+}
+  
 function copyPresetCode() {
   if (canvasSequence.length === 0) {
     alert("Canvas is empty. Add items before copying preset code.");

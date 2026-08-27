@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CHESS-PT Drag & Drop Workflow Builder</title>
+  <title>CHESS-PT Interactive Workflow Builder</title>
   <style>
     :root {
       --tier-1-color: #e3f2fd;
@@ -87,13 +87,18 @@
   </div>
 </div>
 
-<script src="chess_pt_core.js"></script>
+<!-- Shared Configuration Script Loaded First -->
+<script src="chess_pt_config.js"></script>
+
 <script>
+// Retrieve initial state from storage or start empty
 let activeSelections = loadWorkflowState();
 let draggedItemId = null;
 
 function populatePremadeDropdown() {
   const select = document.getElementById('premadeSelect');
+  if (typeof PREMADE_WORKFLOWS === 'undefined') return;
+  
   Object.keys(PREMADE_WORKFLOWS).forEach(key => {
     const opt = document.createElement('option');
     opt.value = key;
@@ -121,7 +126,7 @@ function navigateToSummary() {
   window.location.href = "chess_pt_summary_view.html";
 }
 
-// Drag Handlers
+// Drag and Drop Logic
 function handleDragStart(e, id, isGrayed) {
   if (isGrayed) {
     e.preventDefault();
@@ -181,8 +186,9 @@ function renderApp() {
   const grayedOutSet = calculateGrayedOutIds(activeSelections);
   renderAlerts(grayedOutSet);
 
-  // Render Palette
-  CHESS_WORKFLOW_SCHEMA.forEach(tier => {
+  // Render Palette items from shared workflowData
+  const schema = typeof workflowData !== 'undefined' ? workflowData : CHESS_WORKFLOW_SCHEMA;
+  schema.forEach(tier => {
     const tierGroup = document.createElement('div');
     const header = document.createElement('h4');
     header.innerText = tier.name;
@@ -217,7 +223,7 @@ function renderApp() {
     paletteContainer.appendChild(tierGroup);
   });
 
-  // Render Active Canvas Items
+  // Render dropped items on the active canvas
   if (activeSelections.size === 0) {
     canvasContainer.innerHTML = '<p style="color: #888;">No components placed on canvas yet. Drag items from the left or select a template above.</p>';
   } else {

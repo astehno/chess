@@ -266,6 +266,8 @@
 </head>
 <body>
 
+<!-- UPDATE 5: Update top-controls header bar to add navigation to Summary & Wiki view -->
+
 <div class="top-controls">
   <span class="logo-header">CHESS-PT</span>
   <label for="presetSelect">Demonstration Preset:</label>
@@ -276,6 +278,7 @@
     <option value="lcs_hazard">LCS Hydro-Hazard Workflow</option>
   </select>
   <button class="btn" onclick="loadPreset()">Load Preset</button>
+  <button class="btn" onclick="navigateToSummary()">Summary & Wiki</button> <!-- ADD THIS -->
   <button class="btn btn-danger" onclick="resetCanvas()">Reset Canvas</button>
 </div>
 
@@ -291,10 +294,22 @@
     <div class="workflow-canvas" id="canvas"></div>
   </div>
 </div>
-
+<script src="chess_pt_config.js"></script>
 <script>
 // Dashboard & Schema Definition
-const workflowData = [
+// UPDATE 2: Add state load/save functions and state initialization at the start of your <script> section
+
+// Load saved state or default to empty canvas sequence
+let canvasSequence = loadWorkflowSequence() || [];
+let dragPayload = null;
+let violatingItemIds = new Set();
+const collapsedPaletteTiers = new Set();
+
+function saveState() {
+  saveWorkflowSequence(canvasSequence);
+}
+  
+  const workflowData = [
   {
     id: "s1", name: "1. Structure Selection", colorVar: "var(--tier-1-color)",
     subs: [
@@ -419,7 +434,10 @@ function hasLcsSelection() {
 }
 
 let nonChsAutoCollapsed = false;
-
+function navigateToSummary() {
+  saveState();
+  window.location.href = "chess_pt_summary_view.html";
+}
 function updateDynamicGatingAndCollapse() {
   // Collapse Tiers 3 & 4 once when Non-CHS data is first selected
   if (hasNonChsSelection()) {
@@ -457,31 +475,7 @@ function updateDynamicGatingAndCollapse() {
   }
 }
 
-  // Handle Dynamic Hydraulic Options (Tier 4)
-  const selectedStructs = getSelectedStructureIds();
-  const tier4 = workflowData.find(tier => tier.id === "s4");
-  tier4.subs = [];
   
-  if (selectedStructs.length === 0) {
-    tier4.subs.push({ id: "no_struct_notice", name: "Select Structure(s) in Stage 1 First", disabled: true });
-  } else {
-    selectedStructs.forEach(structId => {
-      const responses = hydraulicResponsesByStructure[structId] || [];
-      responses.forEach(resp => {
-        if (!tier4.subs.some(r => r.id === resp.id)) {
-          tier4.subs.push(resp);
-        }
-      });
-    });
-  }
-
-  // Handle LCS Statistical Analysis Gating
-  const lcsStatNode = workflowData.find(t => t.id === "s5").subs.find(sub => sub.id === "5.2");
-  if (lcsStatNode) {
-    lcsStatNode.disabled = !hasLcsSelection();
-  }
-}
-
 // Render Sidebar Palette
 function renderPalette() {
   updateDynamicGatingAndCollapse();
@@ -582,6 +576,50 @@ function renderCanvas() {
   validateRules();
 }
 
+// UPDATE 4: Update addItemToCanvas(), removeCanvasItem(), and resetCanvas() to save state automatically
+
+function addItemToCanvas(item, targetColIndex) {
+  const isTier4 = item.id.startsWith("4.");
+
+  if (targetColIndex >= canvasSequence.length) {
+    const newCol = { stochasticItems: [], hydraulicItems: [] };
+    if (isTier4) {
+      newCol.hydraulicItems.push(item);
+    } else {
+      newCol.stochasticItems.push(item);
+    }
+    canvasSequence.push(newCol);
+  } else {
+    if (isTier4) {
+      canvasSequence[targetColIndex].hydraulicItems.push(item);
+    } else {
+      canvasSequence[targetColIndex].stochasticItems.push(item);
+    }
+  }
+
+  saveState(); // <-- ADD THIS
+  renderPalette();
+  renderCanvas();
+}
+
+function removeCanvasItem(colIndex, section, index) {
+  if (canvasSequence[colIndex]) {
+    canvasSequence[colIndex][section].splice(index, 1);
+    if (canvasSequence[colIndex].stochasticItems.length === 0 && canvasSequence[colIndex].hydraulicItems.length === 0) {
+      canvasSequence.splice(colIndex, 1);
+    }
+  }
+  saveState(); // <-- ADD THIS
+}
+
+function resetCanvas() {
+  canvasSequence = [];
+  collapsedPaletteTiers.clear();
+  saveState(); // <-- ADD THIS
+  renderPalette();
+  renderCanvas();
+}
+  
 function createDropZone(index) {
   const zone = document.createElement('div');
   zone.className = 'drop-zone';

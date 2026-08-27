@@ -1,3 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CHESS-PT Step Summary & Wiki</title>
+  <style>
+    :root {
+      --tier-1-color: #0EA5E9; /* Cyan / Bright Sky */
+      --tier-2-color: #2563EB; /* Deep Blue */
+      --tier-3-color: #D97706; /* Amber Gold */
+      --tier-4-color: #7C3AED; /* Purple / Violet */
+      --tier-5-color: #C2410C; /* Terracotta / Coral Rose */
+      --tier-6-color: #059669; /* Emerald Green */
+      --grayed-out: #94A3B8;   /* Slate Gray */
+      --cell-highlight: #F59E0B; /* Orange-Yellow Highlight */
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f6f9;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      margin-bottom: 15px;
+    }
+
+    .logo-header {
+      font-size: 1.2em;
+      font-weight: 800;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #3498db;
+      color: white;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #2980b9; }
+
+    .summary-grid {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .tier-container {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 15px;
+      width: calc(33.33% - 20px); /* 3 Tiers per row */
+      box-sizing: border-box;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .tier-header {
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 5px;
+    }
+
+    .box-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Target generic cell styling (color is assigned in JS) */
+    .summary-box {
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: white;
+      font-size: 0.85em;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: none; /* For links */
+      display: block; /* For links to span full width */
+      cursor: default;
+    }
+
+    /* Dashed outline for specific data cells */
+    .dashed-border {
+      border: 2px dashed #000000 !important;
+    }
+
+    /* Specific cell highlights as requested */
+    .highlighted {
+      background-color: var(--cell-highlight) !important;
+      color: #1e293b; /* Dark text for contrast */
+      border: 2px solid #1e293b !important;
+      animation: pulse-highlight 1.5s infinite;
+    }
+    
+    @keyframes pulse-highlight {
+      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+
+    /* Wiki Link specific styling */
+    .wiki-link {
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .wiki-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
+    
+    /* Grayed out cells (no Wiki entry) */
+    .no-wiki {
+      background-color: var(--grayed-out) !important;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+  </style>
+</head>
+<body>
+
 <div class="header-bar">
   <span class="logo-header">CHESS-PT Step Summary & Wiki</span>
   <button class="btn" onclick="goBack()">Back to Workflow Canvas</button>
@@ -8,7 +148,7 @@
 <div class="summary-grid" id="summaryItems"></div>
 
 <script>
-// Single-file embedded data definition for standalone execution
+// Dashboard & Schema Definition (Copied from main file)
 const workflowData = [
   {
     id: "s1", name: "1. Structure Selection", colorVar: "var(--tier-1-color)",
@@ -47,11 +187,12 @@ const workflowData = [
   {
     id: "s4", name: "4. Hydraulic Responses", colorVar: "var(--tier-4-color)",
     subs: [
+      // Manually include the list as this page doesn't run dynamic filtering
       { id: "4.1.1", name: "Levee: Overtopping Rate" },
       { id: "4.1.2", name: "Levee: Overtopping Volume", dashed: true },
       { id: "4.1.3", name: "Levee: Runup" },
-      { id: "4.1.4", name: "Levee: Cumulative Excess Vol", dashed: true, highlight: true },
-      { id: "4.1.5", name: "Levee: Cumulative Excess Work", dashed: true, highlight: true },
+      { id: "4.1.4", name: "Levee: Cumulative Excess Vol", dashed: true, highlight: true }, // HIGHLIGHTED CELL
+      { id: "4.1.5", name: "Levee: Cumulative Excess Work", dashed: true, highlight: true }, // HIGHLIGHTED CELL
       { id: "4.2.1", name: "Floodwall: Overtopping Rate" },
       { id: "4.2.2", name: "Floodwall: Overtopping Vol" },
       { id: "4.2.3", name: "Floodwall: Nappe Geometry" },
@@ -62,7 +203,7 @@ const workflowData = [
       { id: "4.3.4", name: "Rubble Mound: Runup" },
       { id: "4.3.5", name: "Rubble Mound: Overtopping Rate" },
       { id: "4.3.6", name: "Rubble Mound: Overtopping Vol" },
-      { id: "4.4.1", name: "NNBF: Wave Attenuation", dashed: true, highlight: true },
+      { id: "4.4.1", name: "NNBF: Wave Attenuation", dashed: true, highlight: true }, // HIGHLIGHTED CELL
       { id: "4.5.1", name: "Waves: Wind-Generated", dashed: true },
       { id: "4.5.2", name: "Waves: Wave Transformation", dashed: true },
       { id: "4.5.3", name: "Waves: Setup", dashed: true }
@@ -98,9 +239,23 @@ const workflowData = [
   }
 ];
 
-function goBack() {
-  window.history.back();
-}
+// Definition of what IDs have Wiki links and what that Wiki URL is
+const coastalWikiLinks = {
+  // Assume Wiki entries for main structural types
+  "1.1": "https://example.com/wiki/Levee",
+  "1.2": "https://example.com/wiki/Floodwall",
+  "1.3": "https://example.com/wiki/RubbleMound",
+  
+  // High contrast highlighted cells
+  "4.1.4": "https://example.com/wiki/LeveeCumulativeExcessVolume",
+  "4.1.5": "https://example.com/wiki/LeveeCumulativeExcessWork",
+  "4.4.1": "https://example.com/wiki/NNBF_WaveAttenuation",
+  
+  // Hazards
+  "5.1": "https://example.com/wiki/JPM"
+};
+
+const wikiBaseUrl = "https://example.com/wiki/"; // If a cell ID is listed, it links
 
 function renderStepSummary() {
   const container = document.getElementById('summaryItems');
@@ -111,5 +266,86 @@ function renderStepSummary() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", renderStepSummary);
+function createSummaryTier(tier) {
+  const tierEl = document.createElement('div');
+  tierEl.className = 'tier-container';
+
+  const header = document.createElement('div');
+  header.className = 'tier-header';
+  header.innerText = tier.name;
+  tierEl.appendChild(header);
+
+  const boxList = document.createElement('div');
+  boxList.className = 'box-list';
+
+  if (tier.subs && tier.subs.length > 0) {
+    appendSummaryItems(tier.subs, tier.colorVar, boxList);
+  }
+
+  tierEl.appendChild(boxList);
+  return tierEl;
+}
+
+// Function to handle multi-level nested items (like Pre-Processing in Stage 5)
+function appendSummaryItems(items, colorVar, container) {
+  items.forEach(item => {
+    // Basic Cell Structure
+    let cellEl;
+    
+    // Check if Wiki Link exists
+    const wikiUrl = coastalWikiLinks[item.id];
+    
+    if (wikiUrl) {
+      // Cell is a clickable Wiki Link
+      cellEl = document.createElement('a');
+      cellEl.href = wikiUrl;
+      cellEl.target = '_blank';
+      cellEl.title = `View associated Coastal Wiki entry for '${item.name}'`;
+      cellEl.className = 'summary-box wiki-link';
+    } else if (item.colorVar && item.colorVar !== colorVar && !item.id.includes("no_struct_notice")) {
+      // It has color, but not a Wiki link (Assume we want it clickable to a generic wiki entry based on ID)
+       cellEl = document.createElement('a');
+       cellEl.href = wikiBaseUrl + item.id;
+       cellEl.target = '_blank';
+       cellEl.title = `View Coastal Wiki for ID '${item.id}'`;
+       cellEl.className = 'summary-box wiki-link';
+    } else {
+      // It has no Wiki link. Gray it out as 'No Wiki'.
+      cellEl = document.createElement('div');
+      cellEl.className = 'summary-box no-wiki';
+      cellEl.title = `No Coastal Wiki entry exists for ID '${item.id}'`;
+    }
+
+    // Assign Base Color (Unless grayed out)
+    cellEl.style.backgroundColor = cellEl.classList.contains('no-wiki') ? 'var(--grayed-out)' : colorVar;
+    cellEl.innerText = item.name;
+
+    // Apply Black Dashed Outline as requested
+    if (item.dashed) {
+      cellEl.classList.add('dashed-border');
+    }
+
+    // Apply Highlights as requested for cumulative excess vol/work and NNBF attenuation
+    if (item.highlight) {
+      cellEl.classList.add('highlighted');
+    }
+
+    container.appendChild(cellEl);
+
+    // If it has children (like nested Pre-Processing tiers), we display them flat in this summary list
+    if (item.subs && item.subs.length > 0) {
+      appendSummaryItems(item.subs, colorVar, container);
+    }
+  });
+}
+
+function goBack() {
+  // Navigation between standalone pages is not supported. Use manual page structure.
+  alert("Standalone environment cannot navigate between pages. Use manual navigation between generated files.");
+}
+
+// Initialize on Load
+renderStepSummary();
 </script>
+</body>
+</html>

@@ -1,14 +1,14 @@
 // chess_pt_core.js
-// Core Engine: Single Source of Truth for Schema, Rules, State, and Validation
+// Single Source of Truth for Schema, Dependencies, Validation, and Storage
 
 // ============================================================================
-// 1. FLAT WORKFLOW DATA SCHEMA
-// Note: All items are flat within their Tier. Sub-tier items (e.g., 5.3.x) 
-// now directly reference parent '5.3' rather than being deeply nested.
+// 1. WORKFLOW DATA SCHEMA
+// Note: All items are flat within their Tier array. 
+// Flat IDs ensure O(1) performance without multi-level array loops.
 // ============================================================================
 const CHESS_WORKFLOW_SCHEMA = [
   {
-    id: "s1", name: "1. Structure Selection", colorVar: "var(--tier-1-color)",
+    id: "s1", name: "1. Structure Selection", colorVar: "var(--tier-1-color, #4A90E2)",
     subs: [
       { id: "1.1", name: "Levee" },
       { id: "1.2", name: "Floodwall" },
@@ -18,10 +18,10 @@ const CHESS_WORKFLOW_SCHEMA = [
     ]
   },
   {
-    id: "s2", name: "2. Hydrodynamic Forcing", colorVar: "var(--tier-2-color)",
+    id: "s2", name: "2. Hydrodynamic Forcing", colorVar: "var(--tier-2-color, #50E3C2)",
     subs: [
       { id: "2.1", name: "CHS Data" },
-      // EDIT HERE: Toggle 'dashed: true' to change black dashed outline formatting
+      // EDIT HERE: Set 'dashed: true' to draw a black dashed outline on the cell
       { id: "2.2.1", name: "Waves: CDIP", dashed: true },
       { id: "2.2.2", name: "Waves: WIS", dashed: true },
       { id: "2.2.3", name: "Waves: MOPS", dashed: true },
@@ -32,7 +32,7 @@ const CHESS_WORKFLOW_SCHEMA = [
     ]
   },
   {
-    id: "s3", name: "3. Probabilistic Sampling", colorVar: "var(--tier-3-color)",
+    id: "s3", name: "3. Probabilistic Sampling", colorVar: "var(--tier-3-color, #F5A623)",
     subs: [
       { id: "3.1", name: "Deterministic" },
       { id: "3.2", name: "PROS - Frequency Based" },
@@ -43,7 +43,7 @@ const CHESS_WORKFLOW_SCHEMA = [
     ]
   },
   {
-    id: "s4", name: "4. Hydraulic Responses", colorVar: "var(--tier-4-color)",
+    id: "s4", name: "4. Hydraulic Responses", colorVar: "var(--tier-4-color, #BD10E0)",
     subs: [
       { id: "4.1.1", name: "Levee: Overtopping Rate" },
       { id: "4.1.2", name: "Levee: Overtopping Volume", dashed: true },
@@ -67,12 +67,12 @@ const CHESS_WORKFLOW_SCHEMA = [
     ]
   },
   {
-    id: "s5", name: "5. Hazards & Uncertainty", colorVar: "var(--tier-5-color)",
+    id: "s5", name: "5. Hazards & Uncertainty", colorVar: "var(--tier-5-color, #9013FE)",
     subs: [
       { id: "5.1", name: "JPM Analysis" },
       { id: "5.2", name: "LCS Statistical Analysis" },
       { id: "5.3", name: "Pre-Preprocessing" },
-      // Flattened Tier 5 Sub-items (all start with 5 and associate to Tier 5 directly)
+      // Tier 5 items flattened to remove 5.3.x nested structure
       { id: "5.3.1", name: "Univariate: POT", parentGroup: "5.3", dashed: true },
       { id: "5.3.2", name: "Univariate: MLM Fit", parentGroup: "5.3", dashed: true },
       { id: "5.3.3", name: "Univariate: QQ Optimization", parentGroup: "5.3", dashed: true },
@@ -85,7 +85,7 @@ const CHESS_WORKFLOW_SCHEMA = [
     ]
   },
   {
-    id: "s6", name: "6. Outputs", colorVar: "var(--tier-6-color)",
+    id: "s6", name: "6. Outputs", colorVar: "var(--tier-6-color, #7ED321)",
     subs: [
       { id: "6.1", name: "Figures" },
       { id: "6.2", name: "Tables" }
@@ -93,7 +93,7 @@ const CHESS_WORKFLOW_SCHEMA = [
   }
 ];
 
-// Map IDs to Coastal Wiki URLs
+// Coastal Wiki Link Mapping
 const CHESS_WIKI_MAP = {
   "1.1": "https://example.com/wiki/Levee",
   "1.2": "https://example.com/wiki/Floodwall",
@@ -106,83 +106,87 @@ const CHESS_WIKI_MAP = {
 
 // ============================================================================
 // 2. DEPENDENCY ENGINE (GRAY-OUT RULES)
-// EDIT HERE: Map any selection ID to an array of IDs it automatically GRAYS OUT.
+// EDIT HERE: Define which IDs automatically GRAY OUT other IDs upon selection.
 // ============================================================================
 const CHESS_GRAYOUT_RULES = {
-  // If "1.5 Hydrodynamic-Hazards Only" is selected, gray out all specific structural response options
+  // If "1.5 Hydrodynamic-Hazards Only" is selected, gray out all structural hydraulic responses
   "1.5": [
     "4.1.1", "4.1.2", "4.1.3", "4.1.4", "4.1.5",
     "4.2.1", "4.2.2", "4.2.3", "4.2.4",
     "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6",
     "4.4.1"
   ],
-  // Selecting "1.1 Levee" grays out Floodwall and Rubble Mound responses
+  // "1.1 Levee" selected -> Gray out Floodwall & Rubble Mound options
   "1.1": [
     "4.2.1", "4.2.2", "4.2.3", "4.2.4",
+    "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6"
+  ],
+  // "1.2 Floodwall" selected -> Gray out Levee & Rubble Mound options
+  "1.2": [
+    "4.1.1", "4.1.2", "4.1.3", "4.1.4", "4.1.5",
     "4.3.1", "4.3.2", "4.3.3", "4.3.4", "4.3.5", "4.3.6"
   ]
 };
 
 // ============================================================================
-// 3. ERROR & WARNING RULES ENGINE
-// EDIT HERE: Define custom rules that evaluate current selections and return 
-// error or warning messages.
+// 3. VALIDATION ENGINE (ERRORS & WARNINGS)
+// EDIT HERE: Customize error and warning conditions dynamically.
 // ============================================================================
 const CHESS_VALIDATION_RULES = [
   {
     id: "ERR_NO_STRUCTURE",
     type: "error",
     check: (selections) => !Array.from(selections).some(id => id.startsWith("1.")),
-    message: "At least one Tier 1 Structure Selection is required to complete the workflow."
+    message: "At least one Tier 1 Structure Selection must be chosen to complete the workflow."
   },
   {
     id: "WARN_CONFLICT_SAMPLING",
     type: "warning",
     check: (selections) => selections.has("3.1") && selections.has("3.2"),
-    message: "Selecting both Deterministic (3.1) and PROS Frequency-Based (3.2) sampling may result in redundant simulations."
+    message: "Combining Deterministic (3.1) and PROS Frequency-Based (3.2) sampling may yield redundant runs."
   },
   {
-    id: "WARN_GRAYED_SELECTION",
+    id: "WARN_DISABLED_SELECTION",
     type: "warning",
-    check: (selections, grayedOutIds) => Array.from(selections).some(id => grayedOutIds.has(id)),
-    message: "Your current workflow includes items that are disabled/grayed out by other selection rules."
+    check: (selections, grayedOutSet) => Array.from(selections).some(id => grayedOutSet.has(id)),
+    message: "One or more active selections are currently disabled/grayed out by higher-tier selection rules."
   }
 ];
 
 // ============================================================================
-// 4. COMPUTED STATE HELPERS
+// 4. COMPUTATION HELPERS
 // ============================================================================
 
-// Returns Set of all IDs that should be grayed out based on active selections
+// Calculates the Set of all IDs that should be grayed out based on active user selections
 function calculateGrayedOutIds(selectedIds) {
   const grayed = new Set();
   selectedIds.forEach(id => {
-    const disabledList = CHESS_GRAYOUT_RULES[id] || [];
-    disabledList.forEach(disabledId => grayed.add(disabledId));
+    const targets = CHESS_GRAYOUT_RULES[id] || [];
+    targets.forEach(targetId => grayed.add(targetId));
   });
   return grayed;
 }
 
-// Evaluates current selections and returns array of active warnings/errors
+// Evaluates selections against validation rules
 function evaluateWorkflowStatus(selectedIds) {
-  const grayedOutIds = calculateGrayedOutIds(selectedIds);
-  const issues = [];
+  const grayedOutSet = calculateGrayedOutIds(selectedIds);
+  const results = [];
 
   CHESS_VALIDATION_RULES.forEach(rule => {
-    if (rule.check(selectedIds, grayedOutIds)) {
-      issues.push({ id: rule.id, type: rule.type, message: rule.message });
+    if (rule.check(selectedIds, grayedOutSet)) {
+      results.push({ id: rule.id, type: rule.type, message: rule.message });
     }
   });
 
-  return issues;
+  return results;
 }
 
-// Storage persistence
+// Storage persistence wrappers
 function saveWorkflowState(selectedIds) {
   localStorage.setItem("chess_active_selections", JSON.stringify(Array.from(selectedIds)));
 }
 
 function loadWorkflowState() {
-  const raw = localStorage.getItem("chess_active_selections");
-  return raw ? new Set(JSON.parse(raw)) : new Set();
+  const rawData = localStorage.getItem("chess_active_selections");
+  return rawData ? new Set(JSON.parse(rawData)) : new Set();
 }

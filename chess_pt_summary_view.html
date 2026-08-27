@@ -1,0 +1,98 @@
+<div class="header-bar">
+  <span class="logo-header">CHESS-PT Step Summary & Wiki</span>
+  <button class="btn" onclick="navigateBack()">Back to Workflow Canvas</button>
+</div>
+
+<!-- Container for Dynamic Errors & Warnings -->
+<div id="statusAlertContainer" class="alert-container"></div>
+
+<p><small>View all available steps and data types. Color-coded by Tier. Black dashed outlines indicate specific data. Click colored cells to navigate to their associated Coastal Wiki pages.</small></p>
+
+<div class="summary-grid" id="summaryItems"></div>
+
+<!-- Include the shared core script -->
+<script src="chess_pt_core.js"></script>
+
+<script>
+let activeSelections = loadWorkflowState();
+
+function navigateBack() {
+  window.history.back();
+}
+
+function renderStatusAlerts() {
+  const alertContainer = document.getElementById('statusAlertContainer');
+  alertContainer.innerHTML = '';
+
+  const issues = evaluateWorkflowStatus(activeSelections);
+
+  issues.forEach(issue => {
+    const box = document.createElement('div');
+    // EDIT HERE: Style classes for warnings (.alert-warning) and errors (.alert-error)
+    box.className = `alert-box alert-${issue.type}`;
+    box.innerHTML = `<strong>[${issue.type.toUpperCase()}]</strong> ${issue.message}`;
+    alertContainer.appendChild(box);
+  });
+}
+
+function createSummaryTile(item, colorVar, grayedOutIds) {
+  const tile = document.createElement('div');
+  
+  // Base styling
+  let classList = ['summary-tile'];
+  
+  // EDIT HERE: Apply CSS classes based on flags
+  if (item.dashed) classList.push('dashed-border');
+  if (item.highlight) classList.push('highlighted-cell');
+  
+  // Gray-out evaluation
+  const isGrayed = grayedOutIds.has(item.id);
+  if (isGrayed) {
+    classList.push('grayed-out-cell'); // EDIT HERE: Define opacity/gray styling in CSS
+  } else {
+    tile.style.backgroundColor = colorVar;
+  }
+
+  tile.className = classList.join(' ');
+  tile.innerText = `${item.id} ${item.name}`;
+
+  // Wiki click interaction
+  tile.onclick = () => {
+    if (CHESS_WIKI_MAP[item.id]) {
+      window.open(CHESS_WIKI_MAP[item.id], '_blank');
+    }
+  };
+
+  return tile;
+}
+
+function renderStepSummary() {
+  const container = document.getElementById('summaryItems');
+  container.innerHTML = '';
+
+  // Calculate dynamic gray-out set
+  const grayedOutIds = calculateGrayedOutIds(activeSelections);
+
+  // Render Status / Warnings
+  renderStatusAlerts();
+
+  // Render Tiers and Tiles
+  CHESS_WORKFLOW_SCHEMA.forEach(tier => {
+    const tierGroup = document.createElement('div');
+    tierGroup.className = 'summary-tier-group';
+    
+    const header = document.createElement('h3');
+    header.innerText = tier.name;
+    tierGroup.appendChild(header);
+
+    tier.subs.forEach(item => {
+      const tile = createSummaryTile(item, tier.colorVar, grayedOutIds);
+      tierGroup.appendChild(tile);
+    });
+
+    container.appendChild(tierGroup);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", renderStepSummary);
+</script>
